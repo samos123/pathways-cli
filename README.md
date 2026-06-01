@@ -16,26 +16,28 @@
 
 ## Installation
 
-This project utilizes [uv](https://github.com/astral-sh/uv) for fast, modern Python package and dependency management.
-
-To sync the environment and install `pwy`:
+Install `pathways-cli` from PyPI using your preferred package manager:
 
 ```bash
-uv sync
+# Using pip
+pip install pathways-cli
+
+# Or using uv (recommended for fast tool management)
+uv tool install pathways-cli
 ```
 
 ---
 
 ## Usage
 
-You can invoke `pwy` commands directly using `uv run`:
+Once installed, you can invoke the `pwy` CLI directly:
 
 ### 1. Provision / Preview a Cluster (`pwy up`)
 
 Starts a Pathways JobSet or dry-runs the configuration.
 
 ```bash
-uv run pwy up \
+pwy up \
   --tpu-type v6e-16 \
   --gcs-scratch-location gs://my-bucket/pathways-staging \
   --num-slices 1 \
@@ -61,7 +63,7 @@ uv run pwy up \
 Deletes the running Pathways JobSet.
 
 ```bash
-uv run pwy down --name pathways-interactive --namespace default
+pwy down --name pathways-interactive --namespace default
 ```
 
 ---
