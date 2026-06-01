@@ -1,7 +1,11 @@
 import sys
 import click
+from dotenv import load_dotenv, find_dotenv
 from pwy.generator import generate_yaml
 from pwy.kubernetes import apply_manifest, delete_jobset
+
+# Load environment variables from .env file if present
+load_dotenv(find_dotenv(usecwd=True))
 
 @click.group()
 def main():
@@ -9,16 +13,16 @@ def main():
     pass
 
 @main.command()
-@click.option("--tpu-type", required=True, help="TPU type (e.g., v6e-4, v6e-8, v6e-16, v6e-32, v6e-64)")
-@click.option("--gcs-scratch-location", required=True, help="GCS scratch location (e.g., gs://bucket/staging)")
-@click.option("--num-slices", default=1, type=int, show_default=True, help="Number of TPU slices")
-@click.option("--jax-client-image", default="python:3.12-slim", show_default=True, help="Image for the JAX client container")
-@click.option("--command", default=None, help="Command to run in the JAX client container (defaults to sleep infinity)")
-@click.option("--enable-spot", is_flag=True, default=False, help="Enable spot VM scheduling")
-@click.option("--colocated-python", is_flag=True, default=False, help="Enable colocated python sidecars")
-@click.option("--dry-run", is_flag=True, default=False, help="Dry run: print generated YAML to stdout instead of applying it")
-@click.option("--name", default="pathways-interactive", show_default=True, help="Name of the JobSet resource")
-@click.option("--namespace", default="default", show_default=True, help="Kubernetes namespace")
+@click.option("--tpu-type", required=True, envvar="PWY_TPU_TYPE", help="TPU type (e.g., v6e-4, v6e-8, v6e-16, v6e-32, v6e-64)")
+@click.option("--gcs-scratch-location", required=True, envvar="PWY_GCS_SCRATCH_LOCATION", help="GCS scratch location (e.g., gs://bucket/staging)")
+@click.option("--num-slices", default=1, type=int, show_default=True, envvar="PWY_NUM_SLICES", help="Number of TPU slices")
+@click.option("--jax-client-image", default="python:3.12-slim", show_default=True, envvar="PWY_JAX_CLIENT_IMAGE", help="Image for the JAX client container")
+@click.option("--command", default=None, envvar="PWY_COMMAND", help="Command to run in the JAX client container (defaults to sleep infinity)")
+@click.option("--enable-spot", is_flag=True, default=False, envvar="PWY_ENABLE_SPOT", help="Enable spot VM scheduling")
+@click.option("--colocated-python", is_flag=True, default=False, envvar="PWY_COLOCATED_PYTHON", help="Enable colocated python sidecars")
+@click.option("--dry-run", is_flag=True, default=False, envvar="PWY_DRY_RUN", help="Dry run: print generated YAML to stdout instead of applying it")
+@click.option("--name", default="pathways-interactive", show_default=True, envvar="PWY_NAME", help="Name of the JobSet resource")
+@click.option("--namespace", default="default", show_default=True, envvar="PWY_NAMESPACE", help="Kubernetes namespace")
 def up(tpu_type, gcs_scratch_location, num_slices, jax_client_image, command, enable_spot, colocated_python, dry_run, name, namespace):
     """Starts the Pathways cluster or dry-runs the configuration."""
     try:
@@ -51,8 +55,8 @@ def up(tpu_type, gcs_scratch_location, num_slices, jax_client_image, command, en
     click.secho(f"Successfully applied JobSet '{name}'!", fg="green")
 
 @main.command()
-@click.option("--name", default="pathways-interactive", show_default=True, help="Name of the JobSet resource")
-@click.option("--namespace", default="default", show_default=True, help="Kubernetes namespace")
+@click.option("--name", default="pathways-interactive", show_default=True, envvar="PWY_NAME", help="Name of the JobSet resource")
+@click.option("--namespace", default="default", show_default=True, envvar="PWY_NAMESPACE", help="Kubernetes namespace")
 def down(name, namespace):
     """Tears down the Pathways cluster JobSet resource."""
     click.echo(f"Deleting Pathways JobSet '{name}' in namespace '{namespace}'...")

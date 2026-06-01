@@ -95,3 +95,53 @@ def test_cli_down_success(mock_delete):
     assert "Deleting Pathways JobSet 'pathways-interactive'" in result.output
     assert "Successfully deleted JobSet 'pathways-interactive'!" in result.output
     mock_delete.assert_called_once()
+
+def test_cli_up_with_env_variables(monkeypatch):
+    monkeypatch.setenv("PWY_TPU_TYPE", "v6e-8")
+    monkeypatch.setenv("PWY_GCS_SCRATCH_LOCATION", "gs://my-env-bucket/staging")
+    monkeypatch.setenv("PWY_NAME", "env-cluster")
+    
+    runner = CliRunner()
+    result = runner.invoke(main, [
+        "up",
+        "--dry-run",
+    ])
+    assert result.exit_code == 0
+    assert "apiVersion: jobset.x-k8s.io/v1alpha2" in result.output
+    assert "name: env-cluster" in result.output
+    assert "cloud.google.com/gke-tpu-topology: 2x4" in result.output
+
+def test_cli_up_with_dotenv_file():
+    import subprocess
+    import os
+    
+    dotenv_content = (
+        "PWY_TPU_TYPE=v6e-8\n"
+        "PWY_GCS_SCRATCH_LOCATION=gs://test-dotenv-bucket/staging\n"
+        "PWY_NAME=test-dotenv-cluster\n"
+    )
+    # To be safe, we can create the temporary directory inside the workspace itself.
+    # Let's create a scratch dir inside the workspace.
+    workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    scratch_dir = os.path.join(workspace_root, ".test_scratch")
+    os.makedirs(scratch_dir, exist_ok=True)
+    try:
+        with open(os.path.join(scratch_dir, ".env"), "w") as f:
+            f.write(dotenv_content)
+        
+        result = subprocess.run(
+            ["uv", "run", "pwy", "up", "--dry-run"],
+            cwd=scratch_dir,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert "name: test-dotenv-cluster" in result.stdout
+        assert "cloud.google.com/gke-tpu-topology: 2x4" in result.stdout
+    finally:
+        # Cleanup
+        if os.path.exists(os.path.join(scratch_dir, ".env")):
+            os.remove(os.path.join(scratch_dir, ".env"))
+        if os.path.exists(scratch_dir):
+            os.rmdir(scratch_dir)
+
