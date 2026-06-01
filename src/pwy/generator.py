@@ -48,16 +48,16 @@ def generate_yaml(
     # Format Spot VM Node Selector and Tolerations
     if enable_spot:
         spot_toleration_head = (
-            '                - key: "cloud.google.com/gke-spot"\\n'
-            '                  operator: "Equal"\\n'
-            '                  value: "true"\\n'
+            '                - key: "cloud.google.com/gke-spot"\n'
+            '                  operator: "Equal"\n'
+            '                  value: "true"\n'
             '                  effect: "NoSchedule"'
         )
         spot_node_selector_worker = '                cloud.google.com/gke-spot: "true"'
         spot_toleration_worker = (
-            '                - key: "cloud.google.com/gke-spot"\\n'
-            '                  operator: "Equal"\\n'
-            '                  value: "true"\\n'
+            '                - key: "cloud.google.com/gke-spot"\n'
+            '                  operator: "Equal"\n'
+            '                  value: "true"\n'
             '                  effect: "NoSchedule"'
         )
     else:
@@ -67,25 +67,25 @@ def generate_yaml(
     
     # Format colocated python options
     if colocated_python:
-        proxy_sidecar_arg = "\\n                    - --sidecar_name=external"
+        proxy_sidecar_arg = "\n                    - --sidecar_name=external"
         tpu_premapped_buffer_size = 34359738368  # 32 GiB
         colocated_img = get_colocated_python_image(jax_client_image)
         worker_init_containers = (
-            "              initContainers:\\n"
-            "                - name: colocated-python\\n"
-            f"                  image: {colocated_img}\\n"
-            "                  imagePullPolicy: Always\\n"
-            "                  restartPolicy: Always\\n"
-            "                  ports:\\n"
-            "                    - containerPort: 50051\\n"
-            "                      protocol: TCP\\n"
-            "                  env:\\n"
-            "                    - name: CLOUD_PATHWAYS_SIDECAR_SHM_DIRECTORY\\n"
-            "                      value: /tmp/ifrt_proxy\\n"
-            "                    - name: GRPC_SERVER_ADDRESS\\n"
-            "                      value: 0.0.0.0:50051\\n"
-            "                  volumeMounts:\\n"
-            "                    - name: shared-memory\\n"
+            "              initContainers:\n"
+            "                - name: colocated-python\n"
+            f"                  image: {colocated_img}\n"
+            "                  imagePullPolicy: Always\n"
+            "                  restartPolicy: Always\n"
+            "                  ports:\n"
+            "                    - containerPort: 50051\n"
+            "                      protocol: TCP\n"
+            "                  env:\n"
+            "                    - name: CLOUD_PATHWAYS_SIDECAR_SHM_DIRECTORY\n"
+            "                      value: /tmp/ifrt_proxy\n"
+            "                    - name: GRPC_SERVER_ADDRESS\n"
+            "                      value: 0.0.0.0:50051\n"
+            "                  volumeMounts:\n"
+            "                    - name: shared-memory\n"
             "                      mountPath: /tmp/ifrt_proxy"
         )
     else:
@@ -119,4 +119,4 @@ def generate_yaml(
     for line in yaml_content.splitlines():
         if line.strip() or line == "":
             lines.append(line)
-    return "\\n".join(lines) + "\\n"
+    return "\n".join(lines) + "\n"
