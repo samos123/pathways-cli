@@ -109,6 +109,7 @@ spec:
                     - --instance_count={NUM_SLICES}
                     - --instance_type={RM_INSTANCE_TYPE}
                     - --gcs_scratch_location={GCS_SCRATCH_LOCATION}
+                    - --enforce_kernel_ipv6_support=false
               volumes:
                 - name: shared-memory
                   emptyDir:
@@ -186,6 +187,7 @@ spec:
                     - --gcs_scratch_location={GCS_SCRATCH_LOCATION}
                     - --tpu_pinned_host_allocation_recycle=true
                     - --tpu_premapped_buffer_size={TPU_PREMAPPED_BUFFER_SIZE}
+                    - --enforce_kernel_ipv6_support=false
               serviceAccountName: default
               dnsPolicy: ClusterFirstWithHostNet
   successPolicy:
