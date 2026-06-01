@@ -34,15 +34,15 @@ Once installed, you can invoke the `pwy` CLI directly:
 
 ### 1. Provision / Preview a Cluster (`pwy up`)
 
-Starts a Pathways JobSet or dry-runs the configuration.
+Starts a Pathways JobSet on v6e.
 
 ```bash
 pwy up \
   --tpu-type v6e-16 \
-  --gcs-scratch-location gs://my-bucket/pathways-staging \
-  --num-slices 1 \
-  --dry-run
+  --gcs-scratch-location gs://my-bucket/pathways-staging
 ```
+
+Note the above assumes you have a GKE cluster created with a v6e-16 nodepool already provisioned.
 
 #### Key Options:
 - `--tpu-type`: **(Required)** TPU type (e.g., `v6e-4`, `v6e-8`, `v6e-16`, `v6e-32`, `v6e-64`).
