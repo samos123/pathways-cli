@@ -1,7 +1,7 @@
 [project]
 name = "pwy"
 version = "0.1.0"
-description = "Add your description here"
+description = "Pathways CLI to easily bring up pathways clusters."
 readme = "README.md"
 authors = [
     { name = "Sam Stoelinga", email = "sammiestoel@gmail.com" }
