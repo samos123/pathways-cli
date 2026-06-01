@@ -91,6 +91,38 @@ Once the interactive cluster is running, you can verify execution by `exec`ing i
 
 ---
 
+### 4. Running Jupyter Notebook (Interactive Development)
+
+You can spin up a Jupyter Notebook directly inside the JAX client container using the `--command` override:
+
+1. **Launch the cluster with Jupyter Lab**:
+   ```bash
+   pwy up \
+     --tpu-type v6e-4 \
+     --gcs-scratch-location gs://my-bucket/pathways-staging \
+     --command "pip install jax pathwaysutils jupyterlab && jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
+   ```
+
+2. **Find the client pod name**:
+   ```bash
+   POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=pathways-interactive -o jsonpath='{.items[?(@.metadata.labels.jobset\\.sigs\\.k8s\\.io/replicatedjob-name=="pwhd")].metadata.name}')
+   ```
+
+3. **Port forward to the Jupyter server**:
+   ```bash
+   kubectl port-forward $POD_NAME 8888:8888
+   ```
+
+4. **Access Jupyter Lab** in your browser at `http://localhost:8888`. Create a new notebook and run a JAX device check:
+   ```python
+   import pathwaysutils
+   pathwaysutils.initialize()
+   import jax
+   print(jax.devices())
+   ```
+
+---
+
 ## TPU Type Mappings
 
 `pwy` handles all resource-limit math and topologies automatically. It supports a wide range of TPU generations, including:
