@@ -139,7 +139,7 @@ spec:
                     - metadata
                     - metadata.google.internal
               nodeSelector:
-                cloud.google.com/gke-tpu-accelerator: tpu-v6e-slice
+                cloud.google.com/gke-tpu-accelerator: {GKE_ACCELERATOR}
                 cloud.google.com/gke-tpu-topology: {GKE_TOPOLOGY}
 {SPOT_NODE_SELECTOR_WORKER}
               tolerations:
@@ -163,7 +163,7 @@ spec:
                     privileged: true
                   resources:
                     limits:
-                      google.com/tpu: 4
+                      google.com/tpu: {CHIPS_PER_VM}
                   env:
                     - name: TPU_TYPE
                       value: {TPU_TYPE}

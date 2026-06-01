@@ -108,7 +108,33 @@ def test_generate_yaml_invalid_tpu_type():
         generate_yaml(
             name="test-run",
             namespace="default",
-            tpu_type="v5p-8",  # not in the mappings
+            tpu_type="invalid-tpu",  # not in the mappings
             gcs_scratch_location="gs://my-bucket/staging",
         )
-    assert "Unsupported TPU type: v5p-8" in str(excinfo.value)
+    assert "Unsupported TPU type: invalid-tpu" in str(excinfo.value)
+
+def test_generate_yaml_v5p_8():
+    yaml_content = generate_yaml(
+        name="test-run",
+        namespace="default",
+        tpu_type="v5p-8",
+        gcs_scratch_location="gs://my-bucket/staging",
+    )
+    assert "cloud.google.com/gke-tpu-accelerator: tpu-v5p-slice" in yaml_content
+    assert "cloud.google.com/gke-tpu-topology: 2x2x1" in yaml_content
+    assert "--instance_type=tpuv5p:2x2x1" in yaml_content
+    assert "google.com/tpu: 4" in yaml_content
+
+def test_generate_yaml_v6e_8_1_eight_chips():
+    yaml_content = generate_yaml(
+        name="test-run",
+        namespace="default",
+        tpu_type="v6e-8-1",
+        gcs_scratch_location="gs://my-bucket/staging",
+    )
+    assert "cloud.google.com/gke-tpu-accelerator: tpu-v6e-slice" in yaml_content
+    assert "cloud.google.com/gke-tpu-topology: 2x4" in yaml_content
+    assert "--instance_type=tpuv6e:2x4" in yaml_content
+    assert "google.com/tpu: 8" in yaml_content
+
+

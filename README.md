@@ -93,15 +93,13 @@ Once the interactive cluster is running, you can verify execution by `exec`ing i
 
 ## TPU Type Mappings
 
-`pwy` handles all resource-limit math and topologies automatically according to the following matrix:
+`pwy` handles all resource-limit math and topologies automatically. It supports a wide range of TPU generations, including:
 
-| TPU Type | GKE Topology | VMs Per Slice | RM Instance Type |
-| :--- | :--- | :--- | :--- |
-| `v6e-4` | `2x2` | 1 | `tpuv6e:2x2` |
-| `v6e-8` | `2x4` | 2 | `tpuv6e:2x4` |
-| `v6e-16` | `4x4` | 4 | `tpuv6e:4x4` |
-| `v6e-32` | `4x8` | 8 | `tpuv6e:4x8` |
-| `v6e-64` | `8x8` | 16 | `tpuv6e:8x8` |
+- **TPU v6e**: `v6e-4` up to `v6e-256` (including `v6e-8-1` with 8 chips per VM)
+- **TPU v5p**: `v5p-8` up to `v5p-17920`
+- **TPU v5e (v5LitePod)**: `v5litepod-8` up to `v5litepod-256`
+- **TPU v4**: `v4-8` up to `v4-4096`
+- **TPU 7x**: `7x-8` up to `7x-8192`
 
 ---
 
