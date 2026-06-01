@@ -66,6 +66,29 @@ uv run pwy down --name pathways-interactive --namespace default
 
 ---
 
+### 3. Verification Example
+
+Once the interactive cluster is running, you can verify execution by `exec`ing into the client container:
+
+1. **Find the client pod name**:
+   ```bash
+   POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=pathways-interactive -o jsonpath='{.items[?(@.metadata.labels.jobset\\.sigs\\.k8s\\.io/replicatedjob-name=="pwhd")].metadata.name}')
+   ```
+
+2. **Install JAX and Pathways utils**:
+   ```bash
+   kubectl exec $POD_NAME -c client -- pip install jax pathwaysutils
+   ```
+
+3. **Run a Python snippet to initialize and list devices**:
+   ```bash
+   kubectl exec $POD_NAME -c client -- python3 -c "import pathwaysutils; pathwaysutils.initialize(); import jax; print(jax.devices())"
+   ```
+
+   The command output should print the available virtual TPU devices (e.g., coordinates and memory spaces of the allocated chips).
+
+---
+
 ## TPU Type Mappings
 
 `pwy` handles all resource-limit math and topologies automatically according to the following matrix:
