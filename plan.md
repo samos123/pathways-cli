@@ -300,7 +300,7 @@ spec:
 A new standalone directory structure will be created under the workspace (mocking a new repository context):
 
 ```
-/Users/stoelinga/workspace/pathways-cli/
+pathways-cli/
 ├── pyproject.toml
 ├── README.md
 ├── pwy/

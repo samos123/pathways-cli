@@ -9,7 +9,7 @@ This document details the codebase design, architecture, key lessons, and integr
 The project is structured around a standard PEP 621 package layout:
 
 ```
-/Users/stoelinga/workspace/pathways-cli/
+pathways-cli/
 ├── pyproject.toml         # Package configurations, CLI scripts, and Pytest options
 ├── .gitignore             # Excludes local environments, caches, and secrets
 ├── README.md              # User documentation and example verification steps
