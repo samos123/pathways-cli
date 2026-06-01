@@ -138,3 +138,16 @@ def test_generate_yaml_v6e_8_1_eight_chips():
     assert "google.com/tpu: 8" in yaml_content
 
 
+def test_generate_yaml_7x_8():
+    yaml_content = generate_yaml(
+        name="test-run",
+        namespace="default",
+        tpu_type="7x-8",
+        gcs_scratch_location="gs://my-bucket/staging",
+    )
+    assert "cloud.google.com/gke-tpu-accelerator: tpu7x" in yaml_content
+    assert "cloud.google.com/gke-tpu-topology: 2x2x1" in yaml_content
+    assert "--instance_type=tpu7x:2x2x1" in yaml_content
+
+
+
