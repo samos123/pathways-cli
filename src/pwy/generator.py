@@ -2,48 +2,261 @@ from pwy.templates import YAML_TEMPLATE
 
 TPU_MAPPINGS = {
     # v6e
-    "v6e-4": {"topology": "2x2", "vms_per_slice": 1, "gke_accelerator": "tpu-v6e-slice", "rm_type": "tpuv6e:2x2", "chips_per_vm": 4},
-    "v6e-8": {"topology": "2x4", "vms_per_slice": 2, "gke_accelerator": "tpu-v6e-slice", "rm_type": "tpuv6e:2x4", "chips_per_vm": 4},
-    "v6e-8-1": {"topology": "2x4", "vms_per_slice": 1, "gke_accelerator": "tpu-v6e-slice", "rm_type": "tpuv6e:2x4", "chips_per_vm": 8},
-    "v6e-16": {"topology": "4x4", "vms_per_slice": 4, "gke_accelerator": "tpu-v6e-slice", "rm_type": "tpuv6e:4x4", "chips_per_vm": 4},
-    "v6e-32": {"topology": "4x8", "vms_per_slice": 8, "gke_accelerator": "tpu-v6e-slice", "rm_type": "tpuv6e:4x8", "chips_per_vm": 4},
-    "v6e-64": {"topology": "8x8", "vms_per_slice": 16, "gke_accelerator": "tpu-v6e-slice", "rm_type": "tpuv6e:8x8", "chips_per_vm": 4},
-    "v6e-128": {"topology": "8x16", "vms_per_slice": 32, "gke_accelerator": "tpu-v6e-slice", "rm_type": "tpuv6e:8x16", "chips_per_vm": 4},
-    "v6e-256": {"topology": "16x16", "vms_per_slice": 64, "gke_accelerator": "tpu-v6e-slice", "rm_type": "tpuv6e:16x16", "chips_per_vm": 4},
-
+    "v6e-4": {
+        "topology": "2x2",
+        "vms_per_slice": 1,
+        "gke_accelerator": "tpu-v6e-slice",
+        "rm_type": "tpuv6e:2x2",
+        "chips_per_vm": 4,
+    },
+    "v6e-8": {
+        "topology": "2x4",
+        "vms_per_slice": 2,
+        "gke_accelerator": "tpu-v6e-slice",
+        "rm_type": "tpuv6e:2x4",
+        "chips_per_vm": 4,
+    },
+    "v6e-8-1": {
+        "topology": "2x4",
+        "vms_per_slice": 1,
+        "gke_accelerator": "tpu-v6e-slice",
+        "rm_type": "tpuv6e:2x4",
+        "chips_per_vm": 8,
+    },
+    "v6e-16": {
+        "topology": "4x4",
+        "vms_per_slice": 4,
+        "gke_accelerator": "tpu-v6e-slice",
+        "rm_type": "tpuv6e:4x4",
+        "chips_per_vm": 4,
+    },
+    "v6e-32": {
+        "topology": "4x8",
+        "vms_per_slice": 8,
+        "gke_accelerator": "tpu-v6e-slice",
+        "rm_type": "tpuv6e:4x8",
+        "chips_per_vm": 4,
+    },
+    "v6e-64": {
+        "topology": "8x8",
+        "vms_per_slice": 16,
+        "gke_accelerator": "tpu-v6e-slice",
+        "rm_type": "tpuv6e:8x8",
+        "chips_per_vm": 4,
+    },
+    "v6e-128": {
+        "topology": "8x16",
+        "vms_per_slice": 32,
+        "gke_accelerator": "tpu-v6e-slice",
+        "rm_type": "tpuv6e:8x16",
+        "chips_per_vm": 4,
+    },
+    "v6e-256": {
+        "topology": "16x16",
+        "vms_per_slice": 64,
+        "gke_accelerator": "tpu-v6e-slice",
+        "rm_type": "tpuv6e:16x16",
+        "chips_per_vm": 4,
+    },
     # v5litepod
-    "v5litepod-8": {"topology": "2x4", "vms_per_slice": 2, "gke_accelerator": "tpu-v5-lite-podslice", "rm_type": "tpuv5litepod:2x4", "chips_per_vm": 4},
-    "v5litepod-16": {"topology": "4x4", "vms_per_slice": 4, "gke_accelerator": "tpu-v5-lite-podslice", "rm_type": "tpuv5litepod:4x4", "chips_per_vm": 4},
-    "v5litepod-32": {"topology": "4x8", "vms_per_slice": 8, "gke_accelerator": "tpu-v5-lite-podslice", "rm_type": "tpuv5litepod:4x8", "chips_per_vm": 4},
-    "v5litepod-64": {"topology": "8x8", "vms_per_slice": 16, "gke_accelerator": "tpu-v5-lite-podslice", "rm_type": "tpuv5litepod:8x8", "chips_per_vm": 4},
-    "v5litepod-128": {"topology": "8x16", "vms_per_slice": 32, "gke_accelerator": "tpu-v5-lite-podslice", "rm_type": "tpuv5litepod:8x16", "chips_per_vm": 4},
-    "v5litepod-256": {"topology": "16x16", "vms_per_slice": 64, "gke_accelerator": "tpu-v5-lite-podslice", "rm_type": "tpuv5litepod:16x16", "chips_per_vm": 4},
-
+    "v5litepod-8": {
+        "topology": "2x4",
+        "vms_per_slice": 2,
+        "gke_accelerator": "tpu-v5-lite-podslice",
+        "rm_type": "tpuv5litepod:2x4",
+        "chips_per_vm": 4,
+    },
+    "v5litepod-16": {
+        "topology": "4x4",
+        "vms_per_slice": 4,
+        "gke_accelerator": "tpu-v5-lite-podslice",
+        "rm_type": "tpuv5litepod:4x4",
+        "chips_per_vm": 4,
+    },
+    "v5litepod-32": {
+        "topology": "4x8",
+        "vms_per_slice": 8,
+        "gke_accelerator": "tpu-v5-lite-podslice",
+        "rm_type": "tpuv5litepod:4x8",
+        "chips_per_vm": 4,
+    },
+    "v5litepod-64": {
+        "topology": "8x8",
+        "vms_per_slice": 16,
+        "gke_accelerator": "tpu-v5-lite-podslice",
+        "rm_type": "tpuv5litepod:8x8",
+        "chips_per_vm": 4,
+    },
+    "v5litepod-128": {
+        "topology": "8x16",
+        "vms_per_slice": 32,
+        "gke_accelerator": "tpu-v5-lite-podslice",
+        "rm_type": "tpuv5litepod:8x16",
+        "chips_per_vm": 4,
+    },
+    "v5litepod-256": {
+        "topology": "16x16",
+        "vms_per_slice": 64,
+        "gke_accelerator": "tpu-v5-lite-podslice",
+        "rm_type": "tpuv5litepod:16x16",
+        "chips_per_vm": 4,
+    },
     # 7x
-    "7x-8": {"topology": "2x2x1", "vms_per_slice": 1, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:2x2x1", "chips_per_vm": 4},
-    "7x-16": {"topology": "2x2x2", "vms_per_slice": 2, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:2x2x2", "chips_per_vm": 4},
-    "7x-32": {"topology": "2x2x4", "vms_per_slice": 4, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:2x2x4", "chips_per_vm": 4},
-    "7x-64": {"topology": "2x4x4", "vms_per_slice": 8, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:2x4x4", "chips_per_vm": 4},
-    "7x-128": {"topology": "4x4x4", "vms_per_slice": 16, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:4x4x4", "chips_per_vm": 4},
-    "7x-256": {"topology": "4x4x8", "vms_per_slice": 32, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:4x4x8", "chips_per_vm": 4},
-    "7x-512": {"topology": "4x8x8", "vms_per_slice": 64, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:4x8x8", "chips_per_vm": 4},
-    "7x-1024": {"topology": "8x8x8", "vms_per_slice": 128, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:8x8x8", "chips_per_vm": 4},
-    "7x-2048": {"topology": "8x8x16", "vms_per_slice": 256, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:8x8x16", "chips_per_vm": 4},
-    "7x-4096": {"topology": "8x16x16", "vms_per_slice": 512, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:8x16x16", "chips_per_vm": 4},
-    "7x-8192": {"topology": "16x16x16", "vms_per_slice": 1024, "gke_accelerator": "tpu7x", "rm_type": "tpu7x:16x16x16", "chips_per_vm": 4},
-
+    "7x-8": {
+        "topology": "2x2x1",
+        "vms_per_slice": 1,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:2x2x1",
+        "chips_per_vm": 4,
+    },
+    "7x-16": {
+        "topology": "2x2x2",
+        "vms_per_slice": 2,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:2x2x2",
+        "chips_per_vm": 4,
+    },
+    "7x-32": {
+        "topology": "2x2x4",
+        "vms_per_slice": 4,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:2x2x4",
+        "chips_per_vm": 4,
+    },
+    "7x-64": {
+        "topology": "2x4x4",
+        "vms_per_slice": 8,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:2x4x4",
+        "chips_per_vm": 4,
+    },
+    "7x-128": {
+        "topology": "4x4x4",
+        "vms_per_slice": 16,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:4x4x4",
+        "chips_per_vm": 4,
+    },
+    "7x-256": {
+        "topology": "4x4x8",
+        "vms_per_slice": 32,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:4x4x8",
+        "chips_per_vm": 4,
+    },
+    "7x-512": {
+        "topology": "4x8x8",
+        "vms_per_slice": 64,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:4x8x8",
+        "chips_per_vm": 4,
+    },
+    "7x-1024": {
+        "topology": "8x8x8",
+        "vms_per_slice": 128,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:8x8x8",
+        "chips_per_vm": 4,
+    },
+    "7x-2048": {
+        "topology": "8x8x16",
+        "vms_per_slice": 256,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:8x8x16",
+        "chips_per_vm": 4,
+    },
+    "7x-4096": {
+        "topology": "8x16x16",
+        "vms_per_slice": 512,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:8x16x16",
+        "chips_per_vm": 4,
+    },
+    "7x-8192": {
+        "topology": "16x16x16",
+        "vms_per_slice": 1024,
+        "gke_accelerator": "tpu7x",
+        "rm_type": "tpu7x:16x16x16",
+        "chips_per_vm": 4,
+    },
     # v4
-    "v4-8": {"topology": "2x2x1", "vms_per_slice": 1, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:2x2x1", "chips_per_vm": 4},
-    "v4-16": {"topology": "2x2x2", "vms_per_slice": 2, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:2x2x2", "chips_per_vm": 4},
-    "v4-32": {"topology": "2x2x4", "vms_per_slice": 4, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:2x2x4", "chips_per_vm": 4},
-    "v4-64": {"topology": "2x4x4", "vms_per_slice": 8, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:2x4x4", "chips_per_vm": 4},
-    "v4-128": {"topology": "4x4x4", "vms_per_slice": 16, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:4x4x4", "chips_per_vm": 4},
-    "v4-256": {"topology": "4x4x8", "vms_per_slice": 32, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:4x4x8", "chips_per_vm": 4},
-    "v4-512": {"topology": "4x8x8", "vms_per_slice": 64, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:4x8x8", "chips_per_vm": 4},
-    "v4-1024": {"topology": "8x8x8", "vms_per_slice": 128, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:8x8x8", "chips_per_vm": 4},
-    "v4-1536": {"topology": "8x8x12", "vms_per_slice": 192, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:8x8x12", "chips_per_vm": 4},
-    "v4-2048": {"topology": "8x8x16", "vms_per_slice": 256, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:8x8x16", "chips_per_vm": 4},
-    "v4-4096": {"topology": "8x16x16", "vms_per_slice": 512, "gke_accelerator": "tpu-v4-podslice", "rm_type": "tpuv4:8x16x16", "chips_per_vm": 4},
+    "v4-8": {
+        "topology": "2x2x1",
+        "vms_per_slice": 1,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:2x2x1",
+        "chips_per_vm": 4,
+    },
+    "v4-16": {
+        "topology": "2x2x2",
+        "vms_per_slice": 2,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:2x2x2",
+        "chips_per_vm": 4,
+    },
+    "v4-32": {
+        "topology": "2x2x4",
+        "vms_per_slice": 4,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:2x2x4",
+        "chips_per_vm": 4,
+    },
+    "v4-64": {
+        "topology": "2x4x4",
+        "vms_per_slice": 8,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:2x4x4",
+        "chips_per_vm": 4,
+    },
+    "v4-128": {
+        "topology": "4x4x4",
+        "vms_per_slice": 16,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:4x4x4",
+        "chips_per_vm": 4,
+    },
+    "v4-256": {
+        "topology": "4x4x8",
+        "vms_per_slice": 32,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:4x4x8",
+        "chips_per_vm": 4,
+    },
+    "v4-512": {
+        "topology": "4x8x8",
+        "vms_per_slice": 64,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:4x8x8",
+        "chips_per_vm": 4,
+    },
+    "v4-1024": {
+        "topology": "8x8x8",
+        "vms_per_slice": 128,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:8x8x8",
+        "chips_per_vm": 4,
+    },
+    "v4-1536": {
+        "topology": "8x8x12",
+        "vms_per_slice": 192,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:8x8x12",
+        "chips_per_vm": 4,
+    },
+    "v4-2048": {
+        "topology": "8x8x16",
+        "vms_per_slice": 256,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:8x8x16",
+        "chips_per_vm": 4,
+    },
+    "v4-4096": {
+        "topology": "8x16x16",
+        "vms_per_slice": 512,
+        "gke_accelerator": "tpu-v4-podslice",
+        "rm_type": "tpuv4:8x16x16",
+        "chips_per_vm": 4,
+    },
 }
 
 # Dynamically populate v5p topologies
@@ -154,6 +367,7 @@ for key, topo, vms in _V5P_DATA:
         "chips_per_vm": 4,
     }
 
+
 def get_colocated_python_image(client_image: str) -> str:
     if "/" in client_image and ":" in client_image:
         try:
@@ -163,6 +377,7 @@ def get_colocated_python_image(client_image: str) -> str:
         except Exception:
             pass
     return "us-docker.pkg.dev/cloud-tpu-v2-images/pathways/colocated-python:jax-0.10.0"
+
 
 def generate_yaml(
     name: str,
@@ -179,18 +394,18 @@ def generate_yaml(
         raise ValueError(
             f"Unsupported TPU type: {tpu_type}. Supported types: {list(TPU_MAPPINGS.keys())}"
         )
-    
+
     mapping = TPU_MAPPINGS[tpu_type]
     gke_topology = mapping["topology"]
     vms_per_slice = mapping["vms_per_slice"]
     rm_instance_type = mapping["rm_type"]
-    
+
     # Format client execution command
     if not command:
         client_command = "sleep infinity"
     else:
         client_command = command
-    
+
     # Format Spot VM Node Selector and Tolerations
     if spot:
         spot_toleration_head = (
@@ -210,7 +425,7 @@ def generate_yaml(
         spot_toleration_head = ""
         spot_node_selector_worker = ""
         spot_toleration_worker = ""
-    
+
     # Format colocated python options
     if colocated_python:
         proxy_sidecar_arg = "\n                    - --sidecar_name=external"
@@ -238,7 +453,7 @@ def generate_yaml(
         proxy_sidecar_arg = ""
         tpu_premapped_buffer_size = 274877906944  # 256 GiB
         worker_init_containers = ""
-    
+
     # Interpolate variables in the template
     yaml_content = YAML_TEMPLATE.format(
         NAME=name,
@@ -260,7 +475,7 @@ def generate_yaml(
         TPU_PREMAPPED_BUFFER_SIZE=tpu_premapped_buffer_size,
         WORKER_INIT_CONTAINERS=worker_init_containers,
     )
-    
+
     # Clean up empty lines caused by optional block placeholders
     # (specifically ensuring there are no lines with only whitespace or empty lines where placeholders were)
     lines = []

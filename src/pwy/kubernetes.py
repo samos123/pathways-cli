@@ -1,5 +1,6 @@
 import subprocess
 
+
 def apply_manifest(yaml_content: str) -> subprocess.CompletedProcess:
     """Applies the YAML manifest using kubectl apply -f -."""
     process = subprocess.run(
@@ -8,6 +9,7 @@ def apply_manifest(yaml_content: str) -> subprocess.CompletedProcess:
         capture_output=True,
     )
     return process
+
 
 def delete_jobset(name: str, namespace: str) -> subprocess.CompletedProcess:
     """Deletes the JobSet using kubectl delete jobset <name> --namespace=<namespace>."""

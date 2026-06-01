@@ -24,7 +24,10 @@ packages = ["src/pwy"]
 
 [dependency-groups]
 dev = [
+    "black>=26.5.1",
+    "pre-commit>=4.6.0",
     "pytest>=9.0.3",
+    "ruff>=0.15.15",
 ]
 
 [tool.pytest.ini_options]

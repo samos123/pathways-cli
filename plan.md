@@ -80,7 +80,7 @@ For any given run with `tpu-type` and `num-slices`:
 
 The client container `command` field is generated dynamically based on the `--jax-client-image`, `--command`, and `--colocated-python` flags:
 
-1. **JAX Client Image**: 
+1. **JAX Client Image**:
    * Uses `--jax-client-image` (defaulting to `python:3.12-slim`).
 2. **Command Executed**:
    * **If `--command` is NOT provided**:
@@ -349,4 +349,3 @@ def generate_yaml(
 Handles options parsing and commands:
 * Imports `generate_yaml`.
 * Runs `kubectl apply` or `kubectl delete` using Python's `subprocess.run(..., input=yaml_content.encode())`.
-
