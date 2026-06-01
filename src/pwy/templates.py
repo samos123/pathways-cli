@@ -82,7 +82,7 @@ spec:
                   imagePullPolicy: Always
               initContainers:
                 - name: pathways-proxy
-                  image: us-docker.pkg.dev/cloud-tpu-v2-images/pathways/proxy_server:jax-0.9.2
+                  image: us-docker.pkg.dev/cloud-tpu-v2-images/pathways/proxy_server:jax-0.10.0
                   restartPolicy: Always
                   ports:
                     - containerPort: 29000
@@ -98,7 +98,7 @@ spec:
                     - name: shared-memory
                       mountPath: /tmp/ifrt_proxy
                 - name: pathways-rm
-                  image: us-docker.pkg.dev/cloud-tpu-v2-images/pathways/server:jax-0.9.2
+                  image: us-docker.pkg.dev/cloud-tpu-v2-images/pathways/server:jax-0.10.0
                   restartPolicy: Always
                   env:
                     - name: TPU_SKIP_MDS_QUERY
@@ -151,7 +151,7 @@ spec:
 {WORKER_INIT_CONTAINERS}
               containers:
                 - name: worker
-                  image: us-docker.pkg.dev/cloud-tpu-v2-images/pathways/server:jax-0.9.2
+                  image: us-docker.pkg.dev/cloud-tpu-v2-images/pathways/server:jax-0.10.0
                   imagePullPolicy: Always
                   ports:
                     - containerPort: 8471

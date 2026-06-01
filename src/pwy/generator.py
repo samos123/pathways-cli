@@ -16,7 +16,7 @@ def get_colocated_python_image(client_image: str) -> str:
             return f"{repo}/colocated-python:{tag}"
         except Exception:
             pass
-    return "us-docker.pkg.dev/cloud-tpu-v2-images/pathways/colocated-python:jax-0.9.2"
+    return "us-docker.pkg.dev/cloud-tpu-v2-images/pathways/colocated-python:jax-0.10.0"
 
 def generate_yaml(
     name: str,

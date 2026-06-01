@@ -6,7 +6,7 @@ def test_get_colocated_python_image():
     assert get_colocated_python_image("us-docker.pkg.dev/my-project/my-repo/client:latest") == "us-docker.pkg.dev/my-project/my-repo/colocated-python:latest"
     assert get_colocated_python_image("gcr.io/another-project/image:v1.0") == "gcr.io/another-project/colocated-python:v1.0"
     # Fallback/invalid path
-    assert get_colocated_python_image("python:3.12-slim") == "us-docker.pkg.dev/cloud-tpu-v2-images/pathways/colocated-python:jax-0.9.2"
+    assert get_colocated_python_image("python:3.12-slim") == "us-docker.pkg.dev/cloud-tpu-v2-images/pathways/colocated-python:jax-0.10.0"
 
 def test_generate_yaml_default():
     yaml_content = generate_yaml(
