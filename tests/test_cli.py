@@ -145,3 +145,18 @@ def test_cli_up_with_dotenv_file():
         if os.path.exists(scratch_dir):
             os.rmdir(scratch_dir)
 
+
+def test_cli_up_spot_dry_run():
+    runner = CliRunner()
+    result = runner.invoke(main, [
+        "up",
+        "--tpu-type", "v6e-4",
+        "--gcs-scratch-location", "gs://my-bucket/staging",
+        "--dry-run",
+        "--spot",
+    ])
+    assert result.exit_code == 0
+    assert 'cloud.google.com/gke-spot: "true"' in result.output
+    assert '- key: "cloud.google.com/gke-spot"' in result.output
+
+

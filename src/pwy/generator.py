@@ -172,7 +172,7 @@ def generate_yaml(
     num_slices: int = 1,
     jax_client_image: str = "python:3.12-slim",
     command: str = None,
-    enable_spot: bool = False,
+    spot: bool = False,
     colocated_python: bool = False,
 ) -> str:
     if tpu_type not in TPU_MAPPINGS:
@@ -192,7 +192,7 @@ def generate_yaml(
         client_command = command
     
     # Format Spot VM Node Selector and Tolerations
-    if enable_spot:
+    if spot:
         spot_toleration_head = (
             '                - key: "cloud.google.com/gke-spot"\n'
             '                  operator: "Equal"\n'

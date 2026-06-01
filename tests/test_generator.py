@@ -62,7 +62,7 @@ def test_generate_yaml_spot_enabled():
         namespace="default",
         tpu_type="v6e-4",
         gcs_scratch_location="gs://my-bucket/staging",
-        enable_spot=True,
+        spot=True,
     )
     
     # Assert spot VM node selector and tolerations are present

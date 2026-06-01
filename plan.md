@@ -20,7 +20,7 @@ pwy up \
   [--num-slices=1] \
   [--jax-client-image=python:3.12-slim] \
   [--command="python my_script.py"] \
-  [--enable-spot] \
+  [--spot] \
   [--colocated-python] \
   [--dry-run] \
   [--name=pathways-interactive] \
@@ -137,7 +137,7 @@ spec:
                   operator: Equal
                   value: "present"
                   effect: NoSchedule
-                # Spot toleration only added if --enable-spot is True
+                # Spot toleration only added if --spot is True
                 {SPOT_TOLERATION_HEAD}
               containers:
                 - name: client
@@ -245,7 +245,7 @@ spec:
                 cloud.google.com/gke-tpu-topology: {GKE_TOPOLOGY}
                 {SPOT_NODE_SELECTOR_WORKER}
               tolerations:
-                # Spot toleration only added if --enable-spot is True
+                # Spot toleration only added if --spot is True
                 {SPOT_TOLERATION_WORKER}
               containers:
                 - name: worker
@@ -336,7 +336,7 @@ def generate_yaml(
     num_slices: int = 1,
     jax_client_image: str = "python:3.12-slim",
     command: str = None,
-    enable_spot: bool = False,
+    spot: bool = False,
 ) -> str:
     # 1. Look up TPU type mappings
     # 2. Format client container commands

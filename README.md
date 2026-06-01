@@ -50,7 +50,7 @@ Note the above assumes you have a GKE cluster created with a v6e-16 nodepool alr
 - `--num-slices`: Number of TPU slices to run (default: `1`).
 - `--jax-client-image`: Custom client container image (default: `python:3.12-slim`).
 - `--command`: Run a custom training/eval script in the client container. If omitted, defaults to `sleep infinity` (interactive mode).
-- `--enable-spot`: Add node affinity and toleration settings for Spot VMs.
+- `--spot`: Add node affinity and toleration settings for Spot VMs.
 - `--colocated-python`: Enables colocated CPU Python sidecar/init containers on GKE workers and enables external proxy routing.
 - `--dry-run`: Prints the generated YAML to stdout instead of calling `kubectl apply`.
 - `--name`: Name of the Kubernetes JobSet resource (default: `pathways-interactive`).
