@@ -302,27 +302,3 @@ def test_cli_sync_command_success(mock_sync, mock_get_pod):
     mock_sync.assert_called_once_with(
         "./local_dir", "/remote_dir", "my-client-pod", "custom-ns"
     )
-
-
-@patch("pwy.cli.get_client_pod_name")
-@patch("pwy.cli.watch_directory")
-def test_cli_sync_command_watch(mock_watch, mock_get_pod):
-    mock_get_pod.return_value = "my-client-pod"
-
-    runner = CliRunner()
-    result = runner.invoke(
-        main,
-        [
-            "sync",
-            "--watch",
-            "--source",
-            "./local_dir",
-            "--dest",
-            "/remote_dir",
-        ],
-    )
-    assert result.exit_code == 0
-    mock_get_pod.assert_called_once_with("pathways-interactive", "default")
-    mock_watch.assert_called_once_with(
-        "./local_dir", "/remote_dir", "my-client-pod", "default"
-    )

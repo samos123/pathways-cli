@@ -1,11 +1,8 @@
 import os
 import sys
-import time
 import tempfile
 import stat
 import subprocess
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
 
 def get_client_pod_name(name: str, namespace: str) -> str:
@@ -169,53 +166,3 @@ def sync_directory(source: str, dest: str, pod_name: str, namespace: str):
             run_fallback_sync(source, dest, pod_name, namespace)
     else:
         run_fallback_sync(source, dest, pod_name, namespace)
-
-
-class SyncEventHandler(FileSystemEventHandler):
-    def __init__(self, source: str, dest: str, pod_name: str, namespace: str):
-        super().__init__()
-        self.source = source
-        self.dest = dest
-        self.pod_name = pod_name
-        self.namespace = namespace
-        self.last_sync = 0
-        self.debounce_interval = 1.0  # seconds
-
-    def on_any_event(self, event):
-        if event.is_directory:
-            return
-
-        # Exclude common dev build/cache folders
-        parts = event.src_path.split(os.sep)
-        if any(
-            p in parts
-            for p in (".git", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache")
-        ):
-            return
-
-        current_time = time.time()
-        if current_time - self.last_sync > self.debounce_interval:
-            self.last_sync = current_time
-            print(f"Change detected: {event.src_path}. Syncing...")
-            sync_directory(self.source, self.dest, self.pod_name, self.namespace)
-
-
-def watch_directory(source: str, dest: str, pod_name: str, namespace: str):
-    """Starts a continuous file watching loop to sync files on change."""
-    print(f"Starting file watcher on '{source}' syncing to '{pod_name}:{dest}'...")
-    # Initial sync
-    sync_directory(source, dest, pod_name, namespace)
-
-    event_handler = SyncEventHandler(source, dest, pod_name, namespace)
-    observer = Observer()
-    observer.schedule(event_handler, path=source, recursive=True)
-    observer.start()
-
-    print("Watcher started. Press Ctrl+C to stop.")
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\nStopping watcher...")
-        observer.stop()
-    observer.join()

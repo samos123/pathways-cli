@@ -8,7 +8,7 @@ from pwy.kubernetes import (
     wait_for_client_pod,
     wait_for_pod_ready,
 )
-from pwy.sync import get_client_pod_name, sync_directory, watch_directory
+from pwy.sync import get_client_pod_name, sync_directory
 
 # Load environment variables from .env file if present
 load_dotenv(find_dotenv(usecwd=True))
@@ -235,13 +235,7 @@ def down(name, namespace):
     show_default=True,
     help="Destination path in the remote container",
 )
-@click.option(
-    "--watch",
-    is_flag=True,
-    default=False,
-    help="Watch local files and sync continuously",
-)
-def sync(name, namespace, source, dest, watch):
+def sync(name, namespace, source, dest):
     """Syncs local files to the JAX client container."""
     try:
         pod_name = get_client_pod_name(name, namespace)
@@ -249,11 +243,8 @@ def sync(name, namespace, source, dest, watch):
         click.secho(str(e), fg="red", err=True)
         sys.exit(1)
 
-    if watch:
-        watch_directory(source, dest, pod_name, namespace)
-    else:
-        click.echo(f"Syncing local path '{source}' to '{pod_name}:{dest}'...")
-        sync_directory(source, dest, pod_name, namespace)
+    click.echo(f"Syncing local path '{source}' to '{pod_name}:{dest}'...")
+    sync_directory(source, dest, pod_name, namespace)
 
 
 if __name__ == "__main__":
