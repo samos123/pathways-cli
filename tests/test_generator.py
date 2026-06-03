@@ -189,3 +189,30 @@ def test_generate_yaml_7x_8():
     assert "cloud.google.com/gke-tpu-accelerator: tpu7x" in yaml_content
     assert "cloud.google.com/gke-tpu-topology: 2x2x1" in yaml_content
     assert "--instance_type=tpu7x:2x2x1" in yaml_content
+
+
+def test_generate_yaml_sync_enabled_default_path():
+    yaml_content = generate_yaml(
+        name="test-run",
+        namespace="default",
+        tpu_type="v6e-4",
+        gcs_scratch_location="gs://my-bucket/staging",
+        sync=True,
+    )
+    assert "mkdir -p /app && cd /app && sleep infinity" in yaml_content
+
+
+def test_generate_yaml_sync_enabled_custom_path():
+    yaml_content = generate_yaml(
+        name="test-run",
+        namespace="default",
+        tpu_type="v6e-4",
+        gcs_scratch_location="gs://my-bucket/staging",
+        sync=True,
+        remote_path="/workspace",
+        command="python run_my_training.py",
+    )
+    assert (
+        "mkdir -p /workspace && cd /workspace && python run_my_training.py"
+        in yaml_content
+    )

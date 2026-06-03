@@ -219,3 +219,110 @@ def test_cli_up_no_head_on_tpu_dry_run():
     assert result.exit_code == 0
     assert "affinity:" not in result.output
     assert "topologyKey: kubernetes.io/hostname" not in result.output
+
+
+def test_cli_up_sync_dry_run():
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "up",
+            "--tpu-type",
+            "v6e-4",
+            "--gcs-scratch-location",
+            "gs://my-bucket/staging",
+            "--dry-run",
+            "--sync",
+            ".",
+            "--remote-path",
+            "/workspace",
+            "--command",
+            "python train.py",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "mkdir -p /workspace && cd /workspace && python train.py" in result.output
+
+
+@patch("pwy.cli.apply_manifest")
+@patch("pwy.cli.wait_for_client_pod")
+@patch("pwy.cli.wait_for_pod_ready")
+@patch("pwy.cli.sync_directory")
+def test_cli_up_sync_applied_success(mock_sync, mock_ready, mock_wait_pod, mock_apply):
+    mock_apply.return_value = subprocess.CompletedProcess(
+        args=["kubectl", "apply"], returncode=0, stdout=b"", stderr=b""
+    )
+    mock_wait_pod.return_value = "my-client-pod"
+    mock_ready.return_value = True
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "up",
+            "--tpu-type",
+            "v6e-4",
+            "--gcs-scratch-location",
+            "gs://my-bucket/staging",
+            "--sync",
+            "./src",
+            "--remote-path",
+            "/app",
+        ],
+    )
+    assert result.exit_code == 0
+    mock_apply.assert_called_once()
+    mock_wait_pod.assert_called_once_with("pathways-interactive", "default")
+    mock_ready.assert_called_once_with("my-client-pod", "default")
+    mock_sync.assert_called_once_with("./src", "/app", "my-client-pod", "default")
+
+
+@patch("pwy.cli.get_client_pod_name")
+@patch("pwy.cli.sync_directory")
+def test_cli_sync_command_success(mock_sync, mock_get_pod):
+    mock_get_pod.return_value = "my-client-pod"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "sync",
+            "--name",
+            "my-cluster",
+            "--namespace",
+            "custom-ns",
+            "--source",
+            "./local_dir",
+            "--dest",
+            "/remote_dir",
+        ],
+    )
+    assert result.exit_code == 0
+    mock_get_pod.assert_called_once_with("my-cluster", "custom-ns")
+    mock_sync.assert_called_once_with(
+        "./local_dir", "/remote_dir", "my-client-pod", "custom-ns"
+    )
+
+
+@patch("pwy.cli.get_client_pod_name")
+@patch("pwy.cli.watch_directory")
+def test_cli_sync_command_watch(mock_watch, mock_get_pod):
+    mock_get_pod.return_value = "my-client-pod"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "sync",
+            "--watch",
+            "--source",
+            "./local_dir",
+            "--dest",
+            "/remote_dir",
+        ],
+    )
+    assert result.exit_code == 0
+    mock_get_pod.assert_called_once_with("pathways-interactive", "default")
+    mock_watch.assert_called_once_with(
+        "./local_dir", "/remote_dir", "my-client-pod", "default"
+    )

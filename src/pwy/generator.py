@@ -390,6 +390,8 @@ def generate_yaml(
     spot: bool = False,
     colocated_python: bool = False,
     head_on_tpu: bool = True,
+    sync: bool = False,
+    remote_path: str = "/app",
 ) -> str:
     if tpu_type not in TPU_MAPPINGS:
         raise ValueError(
@@ -406,6 +408,11 @@ def generate_yaml(
         client_command = "sleep infinity"
     else:
         client_command = command
+
+    if sync:
+        client_command = (
+            f"mkdir -p {remote_path} && cd {remote_path} && {client_command}"
+        )
 
     # Format Spot VM Node Selector and Tolerations
     if spot:

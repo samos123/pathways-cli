@@ -2,7 +2,13 @@ import sys
 import click
 from dotenv import load_dotenv, find_dotenv
 from pwy.generator import generate_yaml
-from pwy.kubernetes import apply_manifest, delete_jobset
+from pwy.kubernetes import (
+    apply_manifest,
+    delete_jobset,
+    wait_for_client_pod,
+    wait_for_pod_ready,
+)
+from pwy.sync import get_client_pod_name, sync_directory, watch_directory
 
 # Load environment variables from .env file if present
 load_dotenv(find_dotenv(usecwd=True))
@@ -90,6 +96,19 @@ def main():
     envvar="PWY_NAMESPACE",
     help="Kubernetes namespace",
 )
+@click.option(
+    "--sync",
+    default=None,
+    envvar="PWY_SYNC",
+    help="Local directory path to sync to the JAX client container",
+)
+@click.option(
+    "--remote-path",
+    default="/app",
+    show_default=True,
+    envvar="PWY_REMOTE_PATH",
+    help="Destination path in the remote JAX client container",
+)
 def up(
     tpu_type,
     gcs_scratch_location,
@@ -102,6 +121,8 @@ def up(
     dry_run,
     name,
     namespace,
+    sync,
+    remote_path,
 ):
     """Starts the Pathways cluster or dry-runs the configuration."""
     try:
@@ -116,6 +137,8 @@ def up(
             spot=spot,
             colocated_python=colocated_python,
             head_on_tpu=head_on_tpu,
+            sync=bool(sync),
+            remote_path=remote_path,
         )
     except ValueError as e:
         click.secho(f"Error: {e}", fg="red", err=True)
@@ -135,6 +158,27 @@ def up(
         sys.exit(process.returncode)
 
     click.secho(f"Successfully applied JobSet '{name}'!", fg="green")
+
+    if sync:
+        click.echo("Waiting for JAX client pod to be created...")
+        try:
+            pod_name = wait_for_client_pod(name, namespace)
+            click.echo(
+                f"Client pod created: {pod_name}. Waiting for pod to be Running and Ready..."
+            )
+            if wait_for_pod_ready(pod_name, namespace):
+                click.echo(
+                    f"Syncing local path '{sync}' to '{pod_name}:{remote_path}'..."
+                )
+                sync_directory(sync, remote_path, pod_name, namespace)
+            else:
+                click.secho(
+                    "Timed out waiting for client pod to become ready. Skipping initial sync.",
+                    fg="yellow",
+                    err=True,
+                )
+        except Exception as e:
+            click.secho(f"Failed to perform initial sync: {e}", fg="red", err=True)
 
 
 @main.command()
@@ -162,6 +206,54 @@ def down(name, namespace):
         sys.exit(process.returncode)
 
     click.secho(f"Successfully deleted JobSet '{name}'!", fg="green")
+
+
+@main.command()
+@click.option(
+    "--name",
+    default="pathways-interactive",
+    show_default=True,
+    envvar="PWY_NAME",
+    help="Name of the JobSet resource",
+)
+@click.option(
+    "--namespace",
+    default="default",
+    show_default=True,
+    envvar="PWY_NAMESPACE",
+    help="Kubernetes namespace",
+)
+@click.option(
+    "--source",
+    default=".",
+    show_default=True,
+    help="Local source path to sync",
+)
+@click.option(
+    "--dest",
+    default="/app",
+    show_default=True,
+    help="Destination path in the remote container",
+)
+@click.option(
+    "--watch",
+    is_flag=True,
+    default=False,
+    help="Watch local files and sync continuously",
+)
+def sync(name, namespace, source, dest, watch):
+    """Syncs local files to the JAX client container."""
+    try:
+        pod_name = get_client_pod_name(name, namespace)
+    except RuntimeError as e:
+        click.secho(str(e), fg="red", err=True)
+        sys.exit(1)
+
+    if watch:
+        watch_directory(source, dest, pod_name, namespace)
+    else:
+        click.echo(f"Syncing local path '{source}' to '{pod_name}:{dest}'...")
+        sync_directory(source, dest, pod_name, namespace)
 
 
 if __name__ == "__main__":
