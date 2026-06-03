@@ -51,6 +51,27 @@ def test_generate_yaml_default():
     assert "colocated-python" not in yaml_content
     assert "--sidecar_name=external" not in yaml_content
 
+    # Head on TPU elements should be present by default
+    assert "affinity:" in yaml_content
+    assert "podAffinity:" in yaml_content
+    assert "jobset.sigs.k8s.io/jobset-name" in yaml_content
+    assert "- test-run" in yaml_content
+    assert "topologyKey: kubernetes.io/hostname" in yaml_content
+
+
+def test_generate_yaml_head_on_tpu_disabled():
+    yaml_content = generate_yaml(
+        name="test-run",
+        namespace="my-namespace",
+        tpu_type="v6e-4",
+        gcs_scratch_location="gs://my-bucket/staging",
+        head_on_tpu=False,
+    )
+    # Head on TPU elements should NOT be present
+    assert "affinity:" not in yaml_content
+    assert "podAffinity:" not in yaml_content
+    assert "jobset.sigs.k8s.io/jobset-name" not in yaml_content
+
 
 def test_generate_yaml_v6e_16_multi_slice():
     yaml_content = generate_yaml(

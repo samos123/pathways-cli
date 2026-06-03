@@ -389,6 +389,7 @@ def generate_yaml(
     command: str = None,
     spot: bool = False,
     colocated_python: bool = False,
+    head_on_tpu: bool = True,
 ) -> str:
     if tpu_type not in TPU_MAPPINGS:
         raise ValueError(
@@ -454,6 +455,28 @@ def generate_yaml(
         tpu_premapped_buffer_size = 274877906944  # 256 GiB
         worker_init_containers = ""
 
+    # Format affinity for pathways head pod
+    if head_on_tpu:
+        # Indent by 14 spaces to align under 'spec:' in templates.py
+        affinity_head = (
+            "              affinity:\n"
+            "                podAffinity:\n"
+            "                  requiredDuringSchedulingIgnoredDuringExecution:\n"
+            "                    - labelSelector:\n"
+            "                        matchExpressions:\n"
+            "                          - key: jobset.sigs.k8s.io/jobset-name\n"
+            "                            operator: In\n"
+            "                            values:\n"
+            f"                              - {name}\n"
+            "                          - key: jobset.sigs.k8s.io/replicatedjob-name\n"
+            "                            operator: In\n"
+            "                            values:\n"
+            "                              - pwwk\n"
+            "                      topologyKey: kubernetes.io/hostname"
+        )
+    else:
+        affinity_head = ""
+
     # Interpolate variables in the template
     yaml_content = YAML_TEMPLATE.format(
         NAME=name,
@@ -474,6 +497,7 @@ def generate_yaml(
         PROXY_SIDECAR_ARG=proxy_sidecar_arg,
         TPU_PREMAPPED_BUFFER_SIZE=tpu_premapped_buffer_size,
         WORKER_INIT_CONTAINERS=worker_init_containers,
+        AFFINITY_HEAD=affinity_head,
     )
 
     # Clean up empty lines caused by optional block placeholders

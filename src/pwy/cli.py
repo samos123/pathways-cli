@@ -63,6 +63,13 @@ def main():
     help="Enable colocated python sidecars",
 )
 @click.option(
+    "--head-on-tpu/--no-head-on-tpu",
+    is_flag=True,
+    default=True,
+    envvar="PWY_HEAD_ON_TPU",
+    help="Co-schedule the JAX client (head) pod on the same TPU VM slice as the workers",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     default=False,
@@ -91,6 +98,7 @@ def up(
     command,
     spot,
     colocated_python,
+    head_on_tpu,
     dry_run,
     name,
     namespace,
@@ -107,6 +115,7 @@ def up(
             command=command,
             spot=spot,
             colocated_python=colocated_python,
+            head_on_tpu=head_on_tpu,
         )
     except ValueError as e:
         click.secho(f"Error: {e}", fg="red", err=True)

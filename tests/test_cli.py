@@ -32,6 +32,9 @@ def test_cli_up_dry_run():
     assert "apiVersion: jobset.x-k8s.io/v1alpha2" in result.output
     assert "name: my-test-cluster" in result.output
     assert "cloud.google.com/gke-tpu-topology: 2x2" in result.output
+    # Default is head-on-tpu = True
+    assert "affinity:" in result.output
+    assert "topologyKey: kubernetes.io/hostname" in result.output
 
 
 def test_cli_up_validation_error():
@@ -197,3 +200,22 @@ def test_cli_up_spot_dry_run():
     assert result.exit_code == 0
     assert 'cloud.google.com/gke-spot: "true"' in result.output
     assert '- key: "cloud.google.com/gke-spot"' in result.output
+
+
+def test_cli_up_no_head_on_tpu_dry_run():
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "up",
+            "--tpu-type",
+            "v6e-4",
+            "--gcs-scratch-location",
+            "gs://my-bucket/staging",
+            "--dry-run",
+            "--no-head-on-tpu",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "affinity:" not in result.output
+    assert "topologyKey: kubernetes.io/hostname" not in result.output

@@ -36,6 +36,7 @@ spec:
                   value: "present"
                   effect: NoSchedule
 {SPOT_TOLERATION_HEAD}
+{AFFINITY_HEAD}
               containers:
                 - name: client
                   image: {CLIENT_IMAGE}
