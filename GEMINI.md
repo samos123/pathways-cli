@@ -17,15 +17,18 @@ pathways-cli/
 ├── src/
 │   └── pwy/
 │       ├── __init__.py    # Exposes cli entry points
-│       ├── cli.py         # click CLI definition: up, down commands
+│       ├── cli.py         # click CLI definition: up, down, sync, and run commands
 │       ├── generator.py   # Topology math, spot VM toggles, colocated python configurations
 │       ├── templates.py   # Complete GKE JobSet multi-line YAML manifest template
-│       └── kubernetes.py  # Wrapper invoking kubectl subprocesses
+│       ├── sync.py        # Utility code to sync workspace using rsync or kubectl cp fallback
+│       └── kubernetes.py  # Wrapper invoking kubectl subprocesses and helper for pod name retrieval
 └── tests/
     ├── __init__.py
-    ├── test_cli.py        # CLI option validations & mocks
+    ├── test_cli.py        # CLI option validations & mocks (including run/sync commands)
     ├── test_generator.py  # Mappings and string-formatting unit tests
-    └── test_e2e.py        # Real GKE cluster integration execution verifying JAX setup
+    ├── test_sync.py       # Mocked sync utility tests
+    └── test_e2e.py        # Real GKE cluster integration execution verifying JAX setup & pwy run
+
 ```
 
 ---
@@ -37,7 +40,7 @@ Verify changes using one of the three testing scopes:
 ### 1. Unit Tests (Mocked)
 Tests calculations and YAML generation without cluster access.
 ```bash
-uv run pytest tests/test_generator.py tests/test_cli.py
+uv run pytest tests/test_generator.py tests/test_cli.py tests/test_sync.py
 ```
 
 ### 2. End-to-End Integration Tests (Active Cluster)

@@ -147,6 +147,36 @@ def test_e2e_pathways_interactive_up_down():
     assert "TPU_DEVICE" in output, "TPU devices not found in output"
     assert "device(0,TPU_DEVICE" in output, "Device 0 not found"
 
+    # 5b. Test pwy run with sync and command execution
+    print("Testing pwy run execution...")
+    # Write a temporary script to the local workspace
+    temp_script_path = "tests/test_e2e_run_snippet.py"
+    with open(temp_script_path, "w") as f:
+        f.write('print("SUCCESSFUL_E2E_RUN_COMMAND")\n')
+
+    try:
+        # Execute via pwy run in a subprocess
+        pwy_run_proc = subprocess.run(
+            [
+                "uv",
+                "run",
+                "pwy",
+                "run",
+                "python3",
+                temp_script_path,
+            ],
+            capture_output=True,
+            text=True,
+        )
+        print(f"pwy run stdout:\n{pwy_run_proc.stdout}")
+        print(f"pwy run stderr:\n{pwy_run_proc.stderr}")
+        assert pwy_run_proc.returncode == 0, f"pwy run failed: {pwy_run_proc.stderr}"
+        assert "SUCCESSFUL_E2E_RUN_COMMAND" in pwy_run_proc.stdout
+    finally:
+        # Clean up local temporary file
+        if os.path.exists(temp_script_path):
+            os.remove(temp_script_path)
+
     # 6. Teardown JobSet using pwy down
     print("Cleaning up cluster via pwy down...")
     down_result = runner.invoke(main, ["down"])

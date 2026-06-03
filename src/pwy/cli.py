@@ -1,4 +1,6 @@
 import sys
+import os
+import shlex
 import click
 from dotenv import load_dotenv, find_dotenv
 from pwy.generator import generate_yaml
@@ -7,8 +9,9 @@ from pwy.kubernetes import (
     delete_jobset,
     wait_for_client_pod,
     wait_for_pod_ready,
+    get_client_pod_name,
 )
-from pwy.sync import get_client_pod_name, sync_directory
+from pwy.sync import sync_directory
 
 # Load environment variables from .env file if present
 load_dotenv(find_dotenv(usecwd=True))
@@ -245,6 +248,74 @@ def sync(name, namespace, source, dest):
 
     click.echo(f"Syncing local path '{source}' to '{pod_name}:{dest}'...")
     sync_directory(source, dest, pod_name, namespace)
+
+
+@main.command(context_settings=dict(ignore_unknown_options=True))
+@click.option(
+    "--name",
+    default="pathways-interactive",
+    show_default=True,
+    envvar="PWY_NAME",
+    help="Name of the JobSet resource",
+)
+@click.option(
+    "--namespace",
+    default="default",
+    show_default=True,
+    envvar="PWY_NAMESPACE",
+    help="Kubernetes namespace",
+)
+@click.option(
+    "--sync/--no-sync",
+    default=True,
+    show_default=True,
+    help="Sync current working directory before running the command",
+)
+@click.option(
+    "--source",
+    default=".",
+    show_default=True,
+    help="Local source path to sync",
+)
+@click.option(
+    "--dest",
+    default="/app",
+    show_default=True,
+    help="Destination path in the remote container",
+)
+@click.argument("command_args", nargs=-1, required=True, type=click.UNPROCESSED)
+def run(name, namespace, sync, source, dest, command_args):
+    """Syncs local directory and runs a command in the JAX client container."""
+    try:
+        pod_name = get_client_pod_name(name, namespace)
+    except RuntimeError as e:
+        click.secho(str(e), fg="red", err=True)
+        sys.exit(1)
+
+    if sync:
+        click.echo(f"Syncing local path '{source}' to '{pod_name}:{dest}'...")
+        sync_directory(source, dest, pod_name, namespace)
+
+    # Wrap the command to run within the destination directory
+    sh_command = f"mkdir -p {shlex.quote(dest)} && cd {shlex.quote(dest)} && exec {shlex.join(command_args)}"
+
+    exec_args = ["kubectl", "exec"]
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        exec_args.append("-it")
+    else:
+        exec_args.append("-i")
+
+    exec_args.extend(
+        ["-n", namespace, "-c", "client", pod_name, "--", "bash", "-c", sh_command]
+    )
+
+    click.echo(f"Executing command: {' '.join(command_args)}")
+
+    try:
+        os.execvp("kubectl", exec_args)
+    except OSError as e:
+        click.secho(f"Failed to execute kubectl command: {e}", fg="red", err=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -21,24 +21,35 @@ def delete_jobset(name: str, namespace: str) -> subprocess.CompletedProcess:
     return process
 
 
+def get_client_pod_name(name: str, namespace: str) -> str:
+    """Finds the name of the JAX client (head) pod in the JobSet."""
+    cmd = [
+        "kubectl",
+        "get",
+        "pods",
+        "--namespace",
+        namespace,
+        "-l",
+        f"jobset.sigs.k8s.io/jobset-name={name},jobset.sigs.k8s.io/replicatedjob-name=pwhd",
+        "-o",
+        "jsonpath={.items[0].metadata.name}",
+    ]
+    process = subprocess.run(cmd, capture_output=True, text=True)
+    if process.returncode != 0 or not process.stdout.strip():
+        raise RuntimeError(
+            f"Failed to find client pod for JobSet '{name}' in namespace '{namespace}': {process.stderr.strip()}"
+        )
+    return process.stdout.strip()
+
+
 def wait_for_client_pod(name: str, namespace: str, timeout: int = 60) -> str:
     """Waits for the client pod to be created and returns its name."""
     start_time = time.time()
     while time.time() - start_time < timeout:
-        cmd = [
-            "kubectl",
-            "get",
-            "pods",
-            "--namespace",
-            namespace,
-            "-l",
-            f"jobset.sigs.k8s.io/jobset-name={name},jobset.sigs.k8s.io/replicatedjob-name=pwhd",
-            "-o",
-            "jsonpath={.items[0].metadata.name}",
-        ]
-        process = subprocess.run(cmd, capture_output=True, text=True)
-        if process.returncode == 0 and process.stdout.strip():
-            return process.stdout.strip()
+        try:
+            return get_client_pod_name(name, namespace)
+        except RuntimeError:
+            pass
         time.sleep(2)
     raise RuntimeError(
         f"Timed out waiting for client pod to be created for JobSet '{name}'"

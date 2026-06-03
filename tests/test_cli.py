@@ -302,3 +302,88 @@ def test_cli_sync_command_success(mock_sync, mock_get_pod):
     mock_sync.assert_called_once_with(
         "./local_dir", "/remote_dir", "my-client-pod", "custom-ns"
     )
+
+
+@patch("os.execvp")
+@patch("pwy.cli.get_client_pod_name")
+@patch("pwy.cli.sync_directory")
+def test_cli_run_command_with_sync(mock_sync, mock_get_pod, mock_execvp):
+    mock_get_pod.return_value = "my-client-pod"
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "run",
+            "--name",
+            "my-cluster",
+            "--namespace",
+            "custom-ns",
+            "--source",
+            "./local_dir",
+            "--dest",
+            "/remote_dir",
+            "python",
+            "train.py",
+            "--epochs",
+            "10",
+        ],
+    )
+    assert result.exit_code == 0
+    mock_get_pod.assert_called_once_with("my-cluster", "custom-ns")
+    mock_sync.assert_called_once_with(
+        "./local_dir", "/remote_dir", "my-client-pod", "custom-ns"
+    )
+    mock_execvp.assert_called_once_with(
+        "kubectl",
+        [
+            "kubectl",
+            "exec",
+            "-i",
+            "-n",
+            "custom-ns",
+            "-c",
+            "client",
+            "my-client-pod",
+            "--",
+            "bash",
+            "-c",
+            "mkdir -p /remote_dir && cd /remote_dir && exec python train.py --epochs 10",
+        ],
+    )
+
+
+@patch("os.execvp")
+@patch("pwy.cli.get_client_pod_name")
+@patch("pwy.cli.sync_directory")
+def test_cli_run_command_no_sync(mock_sync, mock_get_pod, mock_execvp):
+    mock_get_pod.return_value = "my-client-pod"
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "run",
+            "--no-sync",
+            "echo",
+            "hello",
+        ],
+    )
+    assert result.exit_code == 0
+    mock_get_pod.assert_called_once_with("pathways-interactive", "default")
+    mock_sync.assert_not_called()
+    mock_execvp.assert_called_once_with(
+        "kubectl",
+        [
+            "kubectl",
+            "exec",
+            "-i",
+            "-n",
+            "default",
+            "-c",
+            "client",
+            "my-client-pod",
+            "--",
+            "bash",
+            "-c",
+            "mkdir -p /app && cd /app && exec echo hello",
+        ],
+    )

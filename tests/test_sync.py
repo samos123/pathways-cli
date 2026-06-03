@@ -1,7 +1,7 @@
 from unittest.mock import patch
 import subprocess
+from pwy.kubernetes import get_client_pod_name
 from pwy.sync import (
-    get_client_pod_name,
     install_rsync_if_needed,
     run_rsync_sync,
     run_fallback_sync,
