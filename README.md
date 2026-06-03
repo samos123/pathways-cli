@@ -121,6 +121,47 @@ You can spin up a Jupyter Notebook directly inside the JAX client container usin
    print(jax.devices())
    ```
 
+
+---
+
+### 5. Running vLLM (Multi-Host TPU Serving) via Pathways
+
+You can deploy and run `vllm-tpu` in multi-host mode using the Pathways backend in a single step by passing the startup command via `--command`. The JAX client container executes the server process, communicating with the worker TPUs over the Pathways proxy.
+
+1. **Launch the Pathways cluster and run vLLM serving in one command**:
+   ```bash
+   pwy up \
+     --tpu-type v6e-16 \
+     --gcs-scratch-location gs://my-bucket/pathways-staging \
+     --name vllm-pw \
+     --command 'until pip install uv && uv pip install --system vllm-tpu pathwaysutils; do echo "Pip failed, retrying in 5s..."; sleep 5; done && JAX_PLATFORMS="proxy,cpu" VLLM_TPU_USING_PATHWAYS=1 TPU_BACKEND_TYPE=jax MODEL_IMPL_TYPE=vllm VLLM_ENABLE_V1_MULTIPROCESSING=0 python3 -m vllm.entrypoints.cli.main serve "Qwen/Qwen3.6-35B-A3B" --load-format dummy --tensor-parallel-size 16 --max-model-len 8192 --max-num-batched-tokens 16384 --gpu-memory-utilization 0.80'
+   ```
+   *Note: This provisions a JobSet named `vllm-pw` requesting a single slice of TPU v6e-16 (composed of 4 TPU VMs / 16 total chips). The `--command` override handles package installation robustly and launches the server. `--max-model-len` is set to `8192`, `--max-num-batched-tokens` is set to `16384` (required by multimodal validation logic when `--disable-chunked-mm-input` is forced on Qwen 3.6 MoE), and `--gpu-memory-utilization` is restricted to `0.80` to reserve headroom for compile-time allocations.*
+
+2. **Monitor the server installation and logs**:
+   Track the package installation progress and JAX model compilation directly from the client container logs:
+   ```bash
+   POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=vllm-pw,jobset.sigs.k8s.io/replicatedjob-name=pwhd -o jsonpath='{.items[0].metadata.name}')
+   kubectl logs -f $POD_NAME -c client
+   ```
+
+3. **Verify the server is serving requests**:
+   From a separate terminal on your local machine, forward the server port:
+   ```bash
+   kubectl port-forward $POD_NAME 8000:8000
+   ```
+   Send a query to the model:
+   ```bash
+   curl http://localhost:8000/v1/completions \
+       -H "Content-Type: application/json" \
+       -d '{
+           "model": "Qwen/Qwen3.6-35B-A3B",
+           "prompt": "Pathways is a",
+           "max_tokens": 50,
+           "temperature": 0.0
+       }'
+   ```
+
 ---
 
 ## TPU Type Mappings
