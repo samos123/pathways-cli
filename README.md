@@ -53,7 +53,7 @@ Note the above assumes you have a GKE cluster created with a v6e-16 nodepool alr
 - `--spot`: Add node affinity and toleration settings for Spot VMs.
 - `--colocated-python`: Enables colocated CPU Python sidecar/init containers on GKE workers and enables external proxy routing.
 - `--dry-run`: Prints the generated YAML to stdout instead of calling `kubectl apply`.
-- `--name`: Name of the Kubernetes JobSet resource (default: `pathways-interactive`).
+- `--name`: Name of the Kubernetes JobSet resource (default: `$USER-pw`).
 - `--namespace`: Target Kubernetes namespace (default: `default`).
 
 ---
@@ -74,7 +74,7 @@ Once the interactive cluster is running, you can verify execution by `exec`ing i
 
 1. **Find the client pod name**:
    ```bash
-   POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=pathways-interactive,jobset.sigs.k8s.io/replicatedjob-name=pwhd -o jsonpath='{.items[0].metadata.name}')
+   POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=$USER-pw,jobset.sigs.k8s.io/replicatedjob-name=pwhd -o jsonpath='{.items[0].metadata.name}')
    ```
 
 2. **Install JAX and Pathways utils**:
@@ -105,7 +105,7 @@ You can spin up a Jupyter Notebook directly inside the JAX client container usin
 
 2. **Find the client pod name**:
    ```bash
-   POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=pathways-interactive,jobset.sigs.k8s.io/replicatedjob-name=pwhd -o jsonpath='{.items[0].metadata.name}')
+   POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=$USER-pw,jobset.sigs.k8s.io/replicatedjob-name=pwhd -o jsonpath='{.items[0].metadata.name}')
    ```
 
 3. **Port forward to the Jupyter server**:

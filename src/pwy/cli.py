@@ -2,6 +2,8 @@ import sys
 import os
 import shlex
 import click
+import getpass
+import re
 from dotenv import load_dotenv, find_dotenv
 from pwy.generator import generate_yaml
 from pwy.kubernetes import (
@@ -15,6 +17,38 @@ from pwy.sync import sync_directory
 
 # Load environment variables from .env file if present
 load_dotenv(find_dotenv(usecwd=True))
+
+
+def get_default_name() -> str:
+    """Returns the default JobSet name dynamically based on the current user."""
+    try:
+        username = getpass.getuser()
+    except Exception:
+        username = "user"
+
+    # Sanitize username to conform to DNS subdomain / JobSet name rules
+    username = username.lower()
+    username = re.sub(r"[^a-z0-9]+", "-", username)
+    username = username[:60].strip("-")
+
+    if not username:
+        username = "user"
+
+    return f"{username}-pw"
+
+
+def validate_jobset_name(ctx, param, value):
+    """Validates that a string is a valid Kubernetes JobSet name."""
+    if not value:
+        raise click.BadParameter("Name cannot be empty.")
+    if len(value) > 63:
+        raise click.BadParameter("Name must be 63 characters or less.")
+    pattern = r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+    if not re.match(pattern, value):
+        raise click.BadParameter(
+            "Name must consist of lowercase alphanumeric characters or '-', and must start and end with an alphanumeric character."
+        )
+    return value
 
 
 @click.group()
@@ -87,8 +121,9 @@ def main():
 )
 @click.option(
     "--name",
-    default="pathways-interactive",
-    show_default=True,
+    default=get_default_name,
+    callback=validate_jobset_name,
+    show_default="$USER-pw",
     envvar="PWY_NAME",
     help="Name of the JobSet resource",
 )
@@ -187,8 +222,9 @@ def up(
 @main.command()
 @click.option(
     "--name",
-    default="pathways-interactive",
-    show_default=True,
+    default=get_default_name,
+    callback=validate_jobset_name,
+    show_default="$USER-pw",
     envvar="PWY_NAME",
     help="Name of the JobSet resource",
 )
@@ -214,8 +250,9 @@ def down(name, namespace):
 @main.command()
 @click.option(
     "--name",
-    default="pathways-interactive",
-    show_default=True,
+    default=get_default_name,
+    callback=validate_jobset_name,
+    show_default="$USER-pw",
     envvar="PWY_NAME",
     help="Name of the JobSet resource",
 )
@@ -253,8 +290,9 @@ def sync(name, namespace, source, dest):
 @main.command(context_settings=dict(ignore_unknown_options=True))
 @click.option(
     "--name",
-    default="pathways-interactive",
-    show_default=True,
+    default=get_default_name,
+    callback=validate_jobset_name,
+    show_default="$USER-pw",
     envvar="PWY_NAME",
     help="Name of the JobSet resource",
 )

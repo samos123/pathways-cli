@@ -1,7 +1,13 @@
 import subprocess
+import pytest
 from unittest.mock import patch
 from click.testing import CliRunner
 from pwy.cli import main
+
+
+@pytest.fixture(autouse=True)
+def mock_username(monkeypatch):
+    monkeypatch.setattr("getpass.getuser", lambda: "test-user")
 
 
 def test_cli_help():
@@ -59,7 +65,7 @@ def test_cli_up_apply_success(mock_apply):
     mock_apply.return_value = subprocess.CompletedProcess(
         args=["kubectl", "apply"],
         returncode=0,
-        stdout=b"jobset.jobset.x-k8s.io/pathways-interactive created",
+        stdout=b"jobset.jobset.x-k8s.io/test-user-pw created",
         stderr=b"",
     )
 
@@ -76,10 +82,8 @@ def test_cli_up_apply_success(mock_apply):
     )
 
     assert result.exit_code == 0
-    assert (
-        "Applying Pathways JobSet manifest for 'pathways-interactive'" in result.output
-    )
-    assert "Successfully applied JobSet 'pathways-interactive'!" in result.output
+    assert "Applying Pathways JobSet manifest for 'test-user-pw'" in result.output
+    assert "Successfully applied JobSet 'test-user-pw'!" in result.output
     mock_apply.assert_called_once()
 
 
@@ -116,7 +120,7 @@ def test_cli_down_success(mock_delete):
     mock_delete.return_value = subprocess.CompletedProcess(
         args=["kubectl", "delete"],
         returncode=0,
-        stdout=b'jobset.jobset.x-k8s.io "pathways-interactive" deleted',
+        stdout=b'jobset.jobset.x-k8s.io "test-user-pw" deleted',
         stderr=b"",
     )
 
@@ -124,8 +128,8 @@ def test_cli_down_success(mock_delete):
     result = runner.invoke(main, ["down"])
 
     assert result.exit_code == 0
-    assert "Deleting Pathways JobSet 'pathways-interactive'" in result.output
-    assert "Successfully deleted JobSet 'pathways-interactive'!" in result.output
+    assert "Deleting Pathways JobSet 'test-user-pw'" in result.output
+    assert "Successfully deleted JobSet 'test-user-pw'!" in result.output
     mock_delete.assert_called_once()
 
 
@@ -272,7 +276,7 @@ def test_cli_up_sync_applied_success(mock_sync, mock_ready, mock_wait_pod, mock_
     )
     assert result.exit_code == 0
     mock_apply.assert_called_once()
-    mock_wait_pod.assert_called_once_with("pathways-interactive", "default")
+    mock_wait_pod.assert_called_once_with("test-user-pw", "default")
     mock_ready.assert_called_once_with("my-client-pod", "default")
     mock_sync.assert_called_once_with("./src", "/app", "my-client-pod", "default")
 
@@ -368,7 +372,7 @@ def test_cli_run_command_no_sync(mock_sync, mock_get_pod, mock_execvp):
         ],
     )
     assert result.exit_code == 0
-    mock_get_pod.assert_called_once_with("pathways-interactive", "default")
+    mock_get_pod.assert_called_once_with("test-user-pw", "default")
     mock_sync.assert_not_called()
     mock_execvp.assert_called_once_with(
         "kubectl",
@@ -387,3 +391,55 @@ def test_cli_run_command_no_sync(mock_sync, mock_get_pod, mock_execvp):
             "mkdir -p /app && cd /app && exec echo hello",
         ],
     )
+
+
+def test_cli_name_validation_failures():
+    runner = CliRunner()
+
+    # 1. Test uppercase in name
+    result = runner.invoke(
+        main,
+        [
+            "up",
+            "--tpu-type",
+            "v6e-4",
+            "--gcs-scratch-location",
+            "gs://my-bucket/staging",
+            "--name",
+            "MyCluster",
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Name must consist of lowercase alphanumeric" in result.output
+
+    # 2. Test too long name
+    result = runner.invoke(
+        main,
+        [
+            "up",
+            "--tpu-type",
+            "v6e-4",
+            "--gcs-scratch-location",
+            "gs://my-bucket/staging",
+            "--name",
+            "a" * 64,
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Name must be 63 characters or less" in result.output
+
+    # 3. Test empty name
+    result = runner.invoke(
+        main,
+        [
+            "up",
+            "--tpu-type",
+            "v6e-4",
+            "--gcs-scratch-location",
+            "gs://my-bucket/staging",
+            "--name",
+            "",
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Name cannot be empty" in result.output

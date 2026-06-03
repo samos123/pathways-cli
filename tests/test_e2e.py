@@ -3,7 +3,7 @@ import time
 import subprocess
 import pytest
 from click.testing import CliRunner
-from pwy.cli import main
+from pwy.cli import main, get_default_name
 import dotenv
 
 dotenv.load_dotenv()
@@ -16,6 +16,8 @@ def test_e2e_pathways_interactive_up_down():
     assert (
         gcs_location is not None
     ), "PWY_E2E_GCS_SCRATCH_LOCATION env variable must be set in .env"
+
+    default_name = get_default_name()
 
     # 1. Clean up any leftover JobSet first just in case
     print("Pre-test cleanup...")
@@ -51,7 +53,7 @@ def test_e2e_pathways_interactive_up_down():
             "get",
             "pods",
             "-l",
-            "jobset.sigs.k8s.io/jobset-name=pathways-interactive",
+            f"jobset.sigs.k8s.io/jobset-name={default_name}",
             "-o",
             'jsonpath={.items[?(@.metadata.labels.jobset\\.sigs\\.k8s\\.io/replicatedjob-name=="pwhd")].metadata.name}',
         ]
@@ -66,7 +68,7 @@ def test_e2e_pathways_interactive_up_down():
                 "get",
                 "pods",
                 "-l",
-                "jobset.sigs.k8s.io/jobset-name=pathways-interactive",
+                f"jobset.sigs.k8s.io/jobset-name={default_name}",
                 "-o",
                 "jsonpath={.items[*].status.phase}",
             ],

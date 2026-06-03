@@ -1,3 +1,4 @@
+import re
 from pwy.templates import YAML_TEMPLATE
 
 TPU_MAPPINGS = {
@@ -393,6 +394,15 @@ def generate_yaml(
     sync: bool = False,
     remote_path: str = "/app",
 ) -> str:
+    if not name:
+        raise ValueError("Name cannot be empty.")
+    if len(name) > 63:
+        raise ValueError("Name must be 63 characters or less.")
+    if not re.match(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", name):
+        raise ValueError(
+            "Name must consist of lowercase alphanumeric characters or '-', and must start and end with an alphanumeric character."
+        )
+
     if tpu_type not in TPU_MAPPINGS:
         raise ValueError(
             f"Unsupported TPU type: {tpu_type}. Supported types: {list(TPU_MAPPINGS.keys())}"

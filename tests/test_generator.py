@@ -216,3 +216,36 @@ def test_generate_yaml_sync_enabled_custom_path():
         "mkdir -p /workspace && cd /workspace && python run_my_training.py"
         in yaml_content
     )
+
+
+def test_generate_yaml_invalid_names():
+    # Empty name
+    with pytest.raises(ValueError) as excinfo:
+        generate_yaml(
+            name="",
+            namespace="default",
+            tpu_type="v6e-4",
+            gcs_scratch_location="gs://my-bucket/staging",
+        )
+    assert "Name cannot be empty" in str(excinfo.value)
+
+    # Name too long (> 63 characters)
+    long_name = "a" * 64
+    with pytest.raises(ValueError) as excinfo:
+        generate_yaml(
+            name=long_name,
+            namespace="default",
+            tpu_type="v6e-4",
+            gcs_scratch_location="gs://my-bucket/staging",
+        )
+    assert "Name must be 63 characters or less" in str(excinfo.value)
+
+    # Name containing invalid characters (uppercase)
+    with pytest.raises(ValueError) as excinfo:
+        generate_yaml(
+            name="MyCluster",
+            namespace="default",
+            tpu_type="v6e-4",
+            gcs_scratch_location="gs://my-bucket/staging",
+        )
+    assert "Name must consist of lowercase alphanumeric" in str(excinfo.value)

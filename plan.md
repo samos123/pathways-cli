@@ -23,7 +23,7 @@ pwy up \
   [--spot] \
   [--colocated-python] \
   [--dry-run] \
-  [--name=pathways-interactive] \
+  [--name=$USER-pw] \
   [--namespace=default]
 ```
 
@@ -37,7 +37,7 @@ pwy up \
 Tears down the cluster.
 
 ```bash
-pwy down [--name=pathways-interactive] [--namespace=default]
+pwy down [--name=$USER-pw] [--namespace=default]
 ```
 * **Behavior**: Runs `kubectl delete jobset <name> --namespace=<namespace>`.
 
