@@ -174,32 +174,7 @@ You can deploy and run `sglang-jax` in multi-host mode using the Pathways backen
    git clone https://github.com/sgl-project/sglang-jax
    ```
 
-2. **Patch dependencies and compatibility for JAX 0.10.0**:
-   Since the Pathways server runs JAX `0.10.0`, align the dependency version pins and patch incompatible `jnp.clip` calls in the cloned repository:
-   ```bash
-   python3 -c "
-   # Update pyproject.toml JAX requirements
-   with open('sglang-jax/python/pyproject.toml', \'r\') as f:
-       c = f.read()
-   c = c.replace(\'==0.8.1\', \'==0.10.0\')
-   with open(\'sglang-jax/python/pyproject.toml\', \'w\') as f:
-       f.write(c)
-
-   # Patch jnp.clip calls to use compatible positional arguments
-   for path, target, replacement in [
-       (\'sglang-jax/python/sgl_jax/srt/managers/utils.py\', \'a_min=0\', \'0\'),
-       (\'sglang-jax/python/sgl_jax/srt/kernels/fused_moe/v1/kernel.py\', \'a_max=limit\', \'None, limit\'),
-       (\'sglang-jax/python/sgl_jax/srt/kernels/fused_moe/v1/kernel.py\', \'a_min=-limit, a_max=limit\', \'-limit, limit\'),
-       (\'sglang-jax/python/sgl_jax/srt/multimodal/models/mimo_audio/mimo_audio_tokenizer.py\', \'a_max=1e2\', \'None, 1e2\')
-   ]:
-       with open(path, \'r\') as f:
-           content = f.read()
-       with open(path, \'w\') as f:
-           f.write(content.replace(target, replacement))
-   "
-   ```
-
-3. **Launch the Pathways cluster**:
+2. **Launch the Pathways cluster**:
    ```bash
    pwy up \
      --tpu-type v6e-16 \
@@ -207,34 +182,18 @@ You can deploy and run `sglang-jax` in multi-host mode using the Pathways backen
      --name sglang-pw
    ```
 
-4. **Install dependencies and launch the server**:
+3. **Install dependencies and launch the server**:
    Use `pwy run` with the `--source` option pointing to the cloned repository to sync code and launch serving:
    ```bash
    pwy run \
      --name sglang-pw \
      --source sglang-jax \
      --dest /app \
-     python3 -u -m sgl_jax.launch_server \
-       --model-path Qwen/Qwen2.5-3B-Instruct \
-       --load-format dummy \
-       --trust-remote-code \
-       --tp-size=16 \
-       --mem-fraction-static=0.8 \
-       --chunked-prefill-size=2048 \
-       --download-dir=/tmp \
-       --dtype=bfloat16 \
-       --max-running-requests 8 \
-       --skip-server-warmup \
-       --page-size=64 \
-       --max-total-tokens=257536 \
-       --random-seed=27 \
-       --precompile-token-paddings=2048 \
-       --precompile-bs-paddings=8 \
-       --enable-single-process
+     bash -c 'until pip install uv && uv pip install --system -e /app/python[cpu] pathwaysutils; do echo "Pip failed, retrying in 5s..."; sleep 5; done && JAX_PLATFORMS=proxy JAX_BACKEND_TARGET=grpc://127.0.0.1:29000 JAX_USE_SHARDY_PARTITIONER=0 python3 -u -m sgl_jax.launch_server --model-path Qwen/Qwen2.5-3B-Instruct --load-format dummy --trust-remote-code --tp-size=16 --mem-fraction-static=0.8 --chunked-prefill-size=2048 --download-dir=/tmp --dtype=bfloat16 --max-running-requests 8 --skip-server-warmup --page-size=64 --max-total-tokens=257536 --random-seed=27 --precompile-token-paddings=2048 --precompile-bs-paddings=8 --enable-single-process --attention-backend native'
    ```
-   *Note: The system-provided client container contains pre-installed dependencies matching the Pathways server JAX version (`0.10.0`). This enables the optimal Pallas FlashAttention backend (`--attention-backend fa`, the default) to compile and run without encountering Mosaic layout or serialization errors. If running with custom JAX client packages, ensure client-server version alignment. Setting `--load-format dummy` runs the model with randomly-initialized weights for quick verification without downloading weight files.*
+   *Note: Using `--attention-backend native` is currently recommended on Pathways to bypass custom Pallas FlashAttention compilation issues due to JAX version mismatches between the sglang-jax package (defaulting to JAX 0.8.1) and the Pathways server (JAX 0.10.0). Once sglang-jax officially upgrades its dependencies to JAX 0.10.0, the optimized attention backend (`--attention-backend fa`, the default) will run out-of-the-box. Setting `--load-format dummy` runs the model with randomly-initialized weights for quick verification without downloading weight files.*
 
-5. **Verify the server is serving requests**:
+4. **Verify the server is serving requests**:
    Find the client pod name:
    ```bash
    POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=sglang-pw,jobset.sigs.k8s.io/replicatedjob-name=pwhd -o jsonpath='{.items[0].metadata.name}')
