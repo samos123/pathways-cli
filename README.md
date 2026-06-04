@@ -162,7 +162,104 @@ You can deploy and run `vllm-tpu` in multi-host mode using the Pathways backend 
        }'
    ```
 
+
 ---
+
+### 6. Running sglang-jax (Multi-Host TPU Serving) via Pathways
+
+You can deploy and run `sglang-jax` in multi-host mode using the Pathways backend by syncing the cloned repository to the client container and starting the server process.
+
+1. **Clone the `sglang-jax` repository**:
+   ```bash
+   git clone https://github.com/sgl-project/sglang-jax
+   ```
+
+2. **Patch dependencies and compatibility for JAX 0.10.0**:
+   Since the Pathways server runs JAX `0.10.0`, align the dependency version pins and patch incompatible `jnp.clip` calls in the cloned repository:
+   ```bash
+   python3 -c "
+   # Update pyproject.toml JAX requirements
+   with open('sglang-jax/python/pyproject.toml', \'r\') as f:
+       c = f.read()
+   c = c.replace(\'==0.8.1\', \'==0.10.0\')
+   with open(\'sglang-jax/python/pyproject.toml\', \'w\') as f:
+       f.write(c)
+
+   # Patch jnp.clip calls to use compatible positional arguments
+   for path, target, replacement in [
+       (\'sglang-jax/python/sgl_jax/srt/managers/utils.py\', \'a_min=0\', \'0\'),
+       (\'sglang-jax/python/sgl_jax/srt/kernels/fused_moe/v1/kernel.py\', \'a_max=limit\', \'None, limit\'),
+       (\'sglang-jax/python/sgl_jax/srt/kernels/fused_moe/v1/kernel.py\', \'a_min=-limit, a_max=limit\', \'-limit, limit\'),
+       (\'sglang-jax/python/sgl_jax/srt/multimodal/models/mimo_audio/mimo_audio_tokenizer.py\', \'a_max=1e2\', \'None, 1e2\')
+   ]:
+       with open(path, \'r\') as f:
+           content = f.read()
+       with open(path, \'w\') as f:
+           f.write(content.replace(target, replacement))
+   "
+   ```
+
+3. **Launch the Pathways cluster**:
+   ```bash
+   pwy up \
+     --tpu-type v6e-16 \
+     --gcs-scratch-location gs://my-bucket/pathways-staging \
+     --name sglang-pw
+   ```
+
+4. **Install dependencies and launch the server**:
+   Use `pwy run` with the `--source` option pointing to the cloned repository to sync code and launch serving:
+   ```bash
+   pwy run \
+     --name sglang-pw \
+     --source sglang-jax \
+     --dest /app \
+     python3 -u -m sgl_jax.launch_server \
+       --model-path Qwen/Qwen2.5-3B-Instruct \
+       --load-format dummy \
+       --trust-remote-code \
+       --tp-size=16 \
+       --mem-fraction-static=0.8 \
+       --chunked-prefill-size=2048 \
+       --download-dir=/tmp \
+       --dtype=bfloat16 \
+       --max-running-requests 8 \
+       --skip-server-warmup \
+       --page-size=64 \
+       --max-total-tokens=257536 \
+       --random-seed=27 \
+       --precompile-token-paddings=2048 \
+       --precompile-bs-paddings=8 \
+       --enable-single-process
+   ```
+   *Note: The system-provided client container contains pre-installed dependencies matching the Pathways server JAX version (`0.10.0`). This enables the optimal Pallas FlashAttention backend (`--attention-backend fa`, the default) to compile and run without encountering Mosaic layout or serialization errors. If running with custom JAX client packages, ensure client-server version alignment. Setting `--load-format dummy` runs the model with randomly-initialized weights for quick verification without downloading weight files.*
+
+5. **Verify the server is serving requests**:
+   Find the client pod name:
+   ```bash
+   POD_NAME=$(kubectl get pods -l jobset.sigs.k8s.io/jobset-name=sglang-pw,jobset.sigs.k8s.io/replicatedjob-name=pwhd -o jsonpath='{.items[0].metadata.name}')
+   ```
+   Forward the server port (default `30000`):
+   ```bash
+   kubectl port-forward pod/$POD_NAME 30000:30000
+   ```
+   Send a query to the model using either `/generate` or the OpenAI-compatible `/v1/chat/completions` API:
+   ```bash
+   # Option A: SGLang native generate endpoint
+   curl -X POST 'http://127.0.0.1:30000/generate' \
+     -H 'Content-Type: application/json' \
+     -d '{"text": "the capital of France is", "sampling_params": {"max_new_tokens": 10, "temperature": 0.6}}'
+
+   # Option B: OpenAI-compatible Chat Completions API
+   curl -s -d '{
+     "model": "Qwen/Qwen2.5-3B-Instruct",
+     "messages": [{"role": "user", "content": "Hello!"}],
+     "max_tokens": 16
+   }' -H "Content-Type: application/json" http://127.0.0.1:30000/v1/chat/completions
+   ```
+
+---
+
 
 ## TPU Type Mappings
 
