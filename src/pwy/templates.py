@@ -30,12 +30,7 @@ spec:
                   hostnames:
                     - metadata
                     - metadata.google.internal
-              tolerations:
-                - key: google.com/tpu
-                  operator: Equal
-                  value: "present"
-                  effect: NoSchedule
-{SPOT_TOLERATION_HEAD}
+{TOLERATIONS_HEAD}
 {AFFINITY_HEAD}
               containers:
                 - name: client
@@ -189,8 +184,10 @@ spec:
                     - --tpu_pinned_host_allocation_recycle=true
                     - --tpu_premapped_buffer_size={TPU_PREMAPPED_BUFFER_SIZE}
                     - --enforce_kernel_ipv6_support=false
+{WORKER_VOLUME_MOUNTS}
               serviceAccountName: default
               dnsPolicy: ClusterFirstWithHostNet
+{WORKER_VOLUMES}
   successPolicy:
     operator: All
     targetReplicatedJobs:

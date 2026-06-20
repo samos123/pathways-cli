@@ -41,8 +41,8 @@ def test_generate_yaml_default():
     # Default commands
     assert "sleep infinity" in yaml_content
 
-    # Premapped buffer size (default 256 GiB)
-    assert "--tpu_premapped_buffer_size=274877906944" in yaml_content
+    # Premapped buffer size (default 4 GiB)
+    assert "--tpu_premapped_buffer_size=4294967296" in yaml_content
 
     # Spot elements should NOT be present
     assert "cloud.google.com/gke-spot" not in yaml_content
@@ -71,6 +71,9 @@ def test_generate_yaml_head_on_tpu_disabled():
     assert "affinity:" not in yaml_content
     assert "podAffinity:" not in yaml_content
     assert "jobset.sigs.k8s.io/jobset-name" not in yaml_content
+
+    pwhd_part, _ = yaml_content.split("- name: pwwk", 1)
+    assert "google.com/tpu" not in pwhd_part
 
 
 def test_generate_yaml_v6e_16_multi_slice():
@@ -125,9 +128,11 @@ def test_generate_yaml_colocated_python():
     assert f"image: {expected_colocated_img}" in yaml_content
     assert "name: colocated-python" in yaml_content
     assert "- --sidecar_name=external" in yaml_content
+    assert "mountPath: /tmp/ifrt_proxy" in yaml_content
+    assert "emptyDir:" in yaml_content
 
-    # Premapped buffer size should be 32 GiB
-    assert "--tpu_premapped_buffer_size=34359738368" in yaml_content
+    # Premapped buffer size should be 4 GiB
+    assert "--tpu_premapped_buffer_size=4294967296" in yaml_content
 
 
 def test_generate_yaml_custom_command():
@@ -162,7 +167,7 @@ def test_generate_yaml_v5p_8():
     )
     assert "cloud.google.com/gke-tpu-accelerator: tpu-v5p-slice" in yaml_content
     assert "cloud.google.com/gke-tpu-topology: 2x2x1" in yaml_content
-    assert "--instance_type=tpuv5p:2x2x1" in yaml_content
+    assert "--instance_type=tpuv5:2x2x1" in yaml_content
     assert "google.com/tpu: 4" in yaml_content
 
 

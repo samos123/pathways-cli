@@ -364,7 +364,7 @@ for key, topo, vms in _V5P_DATA:
         "topology": topo,
         "vms_per_slice": vms,
         "gke_accelerator": "tpu-v5p-slice",
-        "rm_type": f"tpuv5p:{topo}",
+        "rm_type": f"tpuv5:{topo}",
         "chips_per_vm": 4,
     }
 
@@ -424,9 +424,17 @@ def generate_yaml(
             f"mkdir -p {remote_path} && cd {remote_path} && {client_command}"
         )
 
-    # Format Spot VM Node Selector and Tolerations
+    # Format head pod tolerations
+    tolerations_list = []
+    if head_on_tpu:
+        tolerations_list.append(
+            '                - key: "google.com/tpu"\n'
+            '                  operator: "Equal"\n'
+            '                  value: "present"\n'
+            '                  effect: "NoSchedule"'
+        )
     if spot:
-        spot_toleration_head = (
+        tolerations_list.append(
             '                - key: "cloud.google.com/gke-spot"\n'
             '                  operator: "Equal"\n'
             '                  value: "true"\n'
@@ -440,14 +448,20 @@ def generate_yaml(
             '                  effect: "NoSchedule"'
         )
     else:
-        spot_toleration_head = ""
         spot_node_selector_worker = ""
         spot_toleration_worker = ""
+
+    if tolerations_list:
+        tolerations_head = "              tolerations:\n" + "\n".join(tolerations_list)
+    else:
+        tolerations_head = ""
+
+    # Set TPU premapped buffer size to 4 GiB
+    tpu_premapped_buffer_size = 4294967296
 
     # Format colocated python options
     if colocated_python:
         proxy_sidecar_arg = "\n                    - --sidecar_name=external"
-        tpu_premapped_buffer_size = 34359738368  # 32 GiB
         colocated_img = get_colocated_python_image(jax_client_image)
         worker_init_containers = (
             "              initContainers:\n"
@@ -467,10 +481,22 @@ def generate_yaml(
             "                    - name: shared-memory\n"
             "                      mountPath: /tmp/ifrt_proxy"
         )
+        worker_volume_mounts = (
+            "                  volumeMounts:\n"
+            "                    - name: shared-memory\n"
+            "                      mountPath: /tmp/ifrt_proxy"
+        )
+        worker_volumes = (
+            "              volumes:\n"
+            "                - name: shared-memory\n"
+            "                  emptyDir:\n"
+            "                    medium: Memory"
+        )
     else:
         proxy_sidecar_arg = ""
-        tpu_premapped_buffer_size = 274877906944  # 256 GiB
         worker_init_containers = ""
+        worker_volume_mounts = ""
+        worker_volumes = ""
 
     # Format affinity for pathways head pod
     if head_on_tpu:
@@ -508,12 +534,14 @@ def generate_yaml(
         VMS_PER_SLICE=vms_per_slice,
         GKE_ACCELERATOR=mapping["gke_accelerator"],
         CHIPS_PER_VM=mapping["chips_per_vm"],
-        SPOT_TOLERATION_HEAD=spot_toleration_head,
+        TOLERATIONS_HEAD=tolerations_head,
         SPOT_NODE_SELECTOR_WORKER=spot_node_selector_worker,
         SPOT_TOLERATION_WORKER=spot_toleration_worker,
         PROXY_SIDECAR_ARG=proxy_sidecar_arg,
         TPU_PREMAPPED_BUFFER_SIZE=tpu_premapped_buffer_size,
         WORKER_INIT_CONTAINERS=worker_init_containers,
+        WORKER_VOLUME_MOUNTS=worker_volume_mounts,
+        WORKER_VOLUMES=worker_volumes,
         AFFINITY_HEAD=affinity_head,
     )
 
