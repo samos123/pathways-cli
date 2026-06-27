@@ -57,6 +57,7 @@ def test_generate_yaml_default():
     assert "jobset.sigs.k8s.io/jobset-name" in yaml_content
     assert "- test-run" in yaml_content
     assert "topologyKey: kubernetes.io/hostname" in yaml_content
+    assert "exclusive-topology" not in yaml_content
 
 
 def test_generate_yaml_head_on_tpu_disabled():
@@ -74,6 +75,7 @@ def test_generate_yaml_head_on_tpu_disabled():
 
     pwhd_part, _ = yaml_content.split("- name: pwwk", 1)
     assert "google.com/tpu" not in pwhd_part
+    assert "exclusive-topology" in yaml_content
 
 
 def test_generate_yaml_v6e_16_multi_slice():

@@ -517,8 +517,14 @@ def generate_yaml(
             "                              - pwwk\n"
             "                      topologyKey: kubernetes.io/hostname"
         )
+        worker_metadata = ""
     else:
         affinity_head = ""
+        worker_metadata = (
+            "        metadata:\n"
+            "          annotations:\n"
+            "            alpha.jobset.sigs.k8s.io/exclusive-topology: cloud.google.com/gke-nodepool\n"
+        )
 
     # Interpolate variables in the template
     yaml_content = YAML_TEMPLATE.format(
@@ -543,6 +549,7 @@ def generate_yaml(
         WORKER_VOLUME_MOUNTS=worker_volume_mounts,
         WORKER_VOLUMES=worker_volumes,
         AFFINITY_HEAD=affinity_head,
+        WORKER_METADATA=worker_metadata,
     )
 
     # Clean up empty lines caused by optional block placeholders

@@ -119,10 +119,7 @@ spec:
     - name: pwwk
       replicas: {NUM_SLICES}
       template:
-        metadata:
-          annotations:
-            alpha.jobset.sigs.k8s.io/exclusive-topology: cloud.google.com/gke-nodepool
-        spec:
+{WORKER_METADATA}        spec:
           parallelism: {VMS_PER_SLICE}
           completions: {VMS_PER_SLICE}
           backoffLimit: 32
