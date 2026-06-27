@@ -1,5 +1,49 @@
 import subprocess
 import time
+from kubernetes import client, config
+
+
+def create_jobset_custom_object(jobset_dict: dict) -> dict:
+    """Creates a JobSet custom resource using the Kubernetes Python API."""
+    try:
+        config.load_kube_config()
+    except Exception:
+        config.load_incluster_config()
+
+    api = client.CustomObjectsApi()
+    group = "jobset.x-k8s.io"
+    version = "v1alpha2"
+    plural = "jobsets"
+    namespace = jobset_dict.get("metadata", {}).get("namespace", "default")
+
+    return api.create_namespaced_custom_object(
+        group=group,
+        version=version,
+        namespace=namespace,
+        plural=plural,
+        body=jobset_dict,
+    )
+
+
+def delete_jobset_custom_object(name: str, namespace: str) -> dict:
+    """Deletes a JobSet custom resource using the Kubernetes Python API."""
+    try:
+        config.load_kube_config()
+    except Exception:
+        config.load_incluster_config()
+
+    api = client.CustomObjectsApi()
+    group = "jobset.x-k8s.io"
+    version = "v1alpha2"
+    plural = "jobsets"
+
+    return api.delete_namespaced_custom_object(
+        group=group,
+        version=version,
+        namespace=namespace,
+        plural=plural,
+        name=name,
+    )
 
 
 def apply_manifest(yaml_content: str) -> subprocess.CompletedProcess:

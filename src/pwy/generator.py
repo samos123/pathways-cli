@@ -1,5 +1,6 @@
 import re
-from pwy.templates import YAML_TEMPLATE
+import yaml
+from pwy.templates import build_jobset_dict
 
 TPU_MAPPINGS = {
     # v6e
@@ -380,7 +381,22 @@ def get_colocated_python_image(client_image: str) -> str:
     return "us-docker.pkg.dev/cloud-tpu-v2-images/pathways/colocated-python:jax-0.10.0"
 
 
-def generate_yaml(
+class JobSetYamlDumper(yaml.SafeDumper):
+    pass
+
+
+def _str_presenter(dumper, data):
+    if data.lower() in ("true", "false", "yes", "no") or any(
+        c in data for c in ('"', "'")
+    ):
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style='"')
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+JobSetYamlDumper.add_representer(str, _str_presenter)
+
+
+def generate_jobset_dict(
     name: str,
     namespace: str,
     tpu_type: str,
@@ -393,7 +409,7 @@ def generate_yaml(
     head_on_tpu: bool = True,
     sync: bool = False,
     remote_path: str = "/app",
-) -> str:
+) -> dict:
     if not name:
         raise ValueError("Name cannot be empty.")
     if len(name) > 63:
@@ -412,150 +428,59 @@ def generate_yaml(
     gke_topology = mapping["topology"]
     vms_per_slice = mapping["vms_per_slice"]
     rm_instance_type = mapping["rm_type"]
+    gke_accelerator = mapping["gke_accelerator"]
+    chips_per_vm = mapping["chips_per_vm"]
 
-    # Format client execution command
-    if not command:
-        client_command = "sleep infinity"
-    else:
-        client_command = command
+    colocated_img = get_colocated_python_image(jax_client_image)
 
-    if sync:
-        client_command = (
-            f"mkdir -p {remote_path} && cd {remote_path} && {client_command}"
-        )
-
-    # Format head pod tolerations
-    tolerations_list = []
-    if head_on_tpu:
-        tolerations_list.append(
-            '                - key: "google.com/tpu"\n'
-            '                  operator: "Equal"\n'
-            '                  value: "present"\n'
-            '                  effect: "NoSchedule"'
-        )
-    if spot:
-        tolerations_list.append(
-            '                - key: "cloud.google.com/gke-spot"\n'
-            '                  operator: "Equal"\n'
-            '                  value: "true"\n'
-            '                  effect: "NoSchedule"'
-        )
-        spot_node_selector_worker = '                cloud.google.com/gke-spot: "true"'
-        spot_toleration_worker = (
-            '                - key: "cloud.google.com/gke-spot"\n'
-            '                  operator: "Equal"\n'
-            '                  value: "true"\n'
-            '                  effect: "NoSchedule"'
-        )
-    else:
-        spot_node_selector_worker = ""
-        spot_toleration_worker = ""
-
-    if tolerations_list:
-        tolerations_head = "              tolerations:\n" + "\n".join(tolerations_list)
-    else:
-        tolerations_head = ""
-
-    # Set TPU premapped buffer size to 4 GiB
-    tpu_premapped_buffer_size = 4294967296
-
-    # Format colocated python options
-    if colocated_python:
-        proxy_sidecar_arg = "\n                    - --sidecar_name=external"
-        colocated_img = get_colocated_python_image(jax_client_image)
-        worker_init_containers = (
-            "              initContainers:\n"
-            "                - name: colocated-python\n"
-            f"                  image: {colocated_img}\n"
-            "                  imagePullPolicy: Always\n"
-            "                  restartPolicy: Always\n"
-            "                  ports:\n"
-            "                    - containerPort: 50051\n"
-            "                      protocol: TCP\n"
-            "                  env:\n"
-            "                    - name: CLOUD_PATHWAYS_SIDECAR_SHM_DIRECTORY\n"
-            "                      value: /tmp/ifrt_proxy\n"
-            "                    - name: GRPC_SERVER_ADDRESS\n"
-            "                      value: 0.0.0.0:50051\n"
-            "                  volumeMounts:\n"
-            "                    - name: shared-memory\n"
-            "                      mountPath: /tmp/ifrt_proxy"
-        )
-        worker_volume_mounts = (
-            "                  volumeMounts:\n"
-            "                    - name: shared-memory\n"
-            "                      mountPath: /tmp/ifrt_proxy"
-        )
-        worker_volumes = (
-            "              volumes:\n"
-            "                - name: shared-memory\n"
-            "                  emptyDir:\n"
-            "                    medium: Memory"
-        )
-    else:
-        proxy_sidecar_arg = ""
-        worker_init_containers = ""
-        worker_volume_mounts = ""
-        worker_volumes = ""
-
-    # Format affinity for pathways head pod
-    if head_on_tpu:
-        # Indent by 14 spaces to align under 'spec:' in templates.py
-        affinity_head = (
-            "              affinity:\n"
-            "                podAffinity:\n"
-            "                  requiredDuringSchedulingIgnoredDuringExecution:\n"
-            "                    - labelSelector:\n"
-            "                        matchExpressions:\n"
-            "                          - key: jobset.sigs.k8s.io/jobset-name\n"
-            "                            operator: In\n"
-            "                            values:\n"
-            f"                              - {name}\n"
-            "                          - key: jobset.sigs.k8s.io/replicatedjob-name\n"
-            "                            operator: In\n"
-            "                            values:\n"
-            "                              - pwwk\n"
-            "                      topologyKey: kubernetes.io/hostname"
-        )
-        worker_metadata = ""
-    else:
-        affinity_head = ""
-        worker_metadata = (
-            "        metadata:\n"
-            "          annotations:\n"
-            "            alpha.jobset.sigs.k8s.io/exclusive-topology: cloud.google.com/gke-nodepool\n"
-        )
-
-    # Interpolate variables in the template
-    yaml_content = YAML_TEMPLATE.format(
-        NAME=name,
-        NAMESPACE=namespace,
-        CLIENT_IMAGE=jax_client_image,
-        CLIENT_EXECUTION_COMMAND=client_command,
-        TPU_TYPE=tpu_type,
-        NUM_SLICES=num_slices,
-        RM_INSTANCE_TYPE=rm_instance_type,
-        GCS_SCRATCH_LOCATION=gcs_scratch_location,
-        GKE_TOPOLOGY=gke_topology,
-        VMS_PER_SLICE=vms_per_slice,
-        GKE_ACCELERATOR=mapping["gke_accelerator"],
-        CHIPS_PER_VM=mapping["chips_per_vm"],
-        TOLERATIONS_HEAD=tolerations_head,
-        SPOT_NODE_SELECTOR_WORKER=spot_node_selector_worker,
-        SPOT_TOLERATION_WORKER=spot_toleration_worker,
-        PROXY_SIDECAR_ARG=proxy_sidecar_arg,
-        TPU_PREMAPPED_BUFFER_SIZE=tpu_premapped_buffer_size,
-        WORKER_INIT_CONTAINERS=worker_init_containers,
-        WORKER_VOLUME_MOUNTS=worker_volume_mounts,
-        WORKER_VOLUMES=worker_volumes,
-        AFFINITY_HEAD=affinity_head,
-        WORKER_METADATA=worker_metadata,
+    return build_jobset_dict(
+        name=name,
+        namespace=namespace,
+        tpu_type=tpu_type,
+        gcs_scratch_location=gcs_scratch_location,
+        gke_topology=gke_topology,
+        vms_per_slice=vms_per_slice,
+        rm_instance_type=rm_instance_type,
+        gke_accelerator=gke_accelerator,
+        chips_per_vm=chips_per_vm,
+        num_slices=num_slices,
+        jax_client_image=jax_client_image,
+        command=command,
+        spot=spot,
+        colocated_python=colocated_python,
+        head_on_tpu=head_on_tpu,
+        sync=sync,
+        remote_path=remote_path,
+        colocated_img=colocated_img,
     )
 
-    # Clean up empty lines caused by optional block placeholders
-    # (specifically ensuring there are no lines with only whitespace or empty lines where placeholders were)
-    lines = []
-    for line in yaml_content.splitlines():
-        if line.strip() or line == "":
-            lines.append(line)
-    return "\n".join(lines) + "\n"
+
+def generate_yaml(
+    name: str,
+    namespace: str,
+    tpu_type: str,
+    gcs_scratch_location: str,
+    num_slices: int = 1,
+    jax_client_image: str = "python:3.12-slim",
+    command: str = None,
+    spot: bool = False,
+    colocated_python: bool = False,
+    head_on_tpu: bool = True,
+    sync: bool = False,
+    remote_path: str = "/app",
+) -> str:
+    jobset_dict = generate_jobset_dict(
+        name=name,
+        namespace=namespace,
+        tpu_type=tpu_type,
+        gcs_scratch_location=gcs_scratch_location,
+        num_slices=num_slices,
+        jax_client_image=jax_client_image,
+        command=command,
+        spot=spot,
+        colocated_python=colocated_python,
+        head_on_tpu=head_on_tpu,
+        sync=sync,
+        remote_path=remote_path,
+    )
+    return yaml.dump(jobset_dict, Dumper=JobSetYamlDumper, sort_keys=False)

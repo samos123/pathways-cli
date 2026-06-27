@@ -203,7 +203,7 @@ def test_cli_up_spot_dry_run():
     )
     assert result.exit_code == 0
     assert 'cloud.google.com/gke-spot: "true"' in result.output
-    assert '- key: "cloud.google.com/gke-spot"' in result.output
+    assert "key: cloud.google.com/gke-spot" in result.output
 
 
 def test_cli_up_no_head_on_tpu_dry_run():

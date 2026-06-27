@@ -1,5 +1,9 @@
 import pytest
-from pwy.generator import generate_yaml, get_colocated_python_image
+from pwy.generator import (
+    generate_yaml,
+    generate_jobset_dict,
+    get_colocated_python_image,
+)
 
 
 def test_get_colocated_python_image():
@@ -106,10 +110,10 @@ def test_generate_yaml_spot_enabled():
 
     # Assert spot VM node selector and tolerations are present
     assert 'cloud.google.com/gke-spot: "true"' in yaml_content
-    assert '- key: "cloud.google.com/gke-spot"' in yaml_content
-    assert 'operator: "Equal"' in yaml_content
+    assert "key: cloud.google.com/gke-spot" in yaml_content
+    assert "operator: Equal" in yaml_content
     assert 'value: "true"' in yaml_content
-    assert 'effect: "NoSchedule"' in yaml_content
+    assert "effect: NoSchedule" in yaml_content
 
 
 def test_generate_yaml_colocated_python():
@@ -256,3 +260,22 @@ def test_generate_yaml_invalid_names():
             gcs_scratch_location="gs://my-bucket/staging",
         )
     assert "Name must consist of lowercase alphanumeric" in str(excinfo.value)
+
+
+def test_generate_jobset_dict_structure():
+    jobset_dict = generate_jobset_dict(
+        name="dict-test",
+        namespace="test-ns",
+        tpu_type="v6e-4",
+        gcs_scratch_location="gs://my-bucket/staging",
+        spot=True,
+    )
+    assert isinstance(jobset_dict, dict)
+    assert jobset_dict["apiVersion"] == "jobset.x-k8s.io/v1alpha2"
+    assert jobset_dict["kind"] == "JobSet"
+    assert jobset_dict["metadata"]["name"] == "dict-test"
+    assert jobset_dict["metadata"]["namespace"] == "test-ns"
+    replicated_jobs = jobset_dict["spec"]["replicatedJobs"]
+    assert len(replicated_jobs) == 2
+    assert replicated_jobs[0]["name"] == "pwhd"
+    assert replicated_jobs[1]["name"] == "pwwk"
