@@ -7,6 +7,7 @@
 ## Features
 
 - **Automated TPU Topology Calculations**: Translates simple TPU resource types (`v6e-4`, `v6e-16`, etc.) into GKE topologies, VM counts, and instance settings.
+- **File Syncing & Remote Execution**: Seamlessly synchronize local project files to remote client containers (`pwy sync`) and execute scripts inline (`pwy run`).
 - **Spot VM Support**: Dynamically injects GKE node selectors and tolerations for running workloads on cost-effective Spot VMs.
 - **Colocated Python Support**: Simplifies distributed checkpointing (e.g. via Orbax) by configuring and enabling colocated host CPU sidecars and proxy endpoints automatically.
 - **Interactive & Batch Execution**: Supports spinning up pathways servers with infinite sleep drivers for interactive debugging, or executing training scripts directly.
@@ -28,9 +29,9 @@ uv tool install pathways-cli
 
 ---
 
-## Usage
+## Basic Usage
 
-Once installed, you can invoke the `pwy` CLI directly:
+Once installed, you can manage Pathways cluster workloads using the core `pwy` CLI commands:
 
 ### 1. Provision / Preview a Cluster (`pwy up`)
 
@@ -55,12 +56,39 @@ Note the above assumes you have a GKE cluster created with a v6e-16 nodepool alr
 - `--dry-run`: Prints the generated YAML to stdout instead of calling `kubectl apply`.
 - `--name`: Name of the Kubernetes JobSet resource (default: `$USER-pw`).
 - `--namespace`: Target Kubernetes namespace (default: `default`).
+- `--sync`: Local directory path to sync to the JAX client container upon startup.
+- `--remote-path`: Destination path in the remote JAX client container (default: `/app`).
 
 ---
 
-### 2. Teardown a Cluster (`pwy down`)
+### 2. Sync Code & Execute Commands (`pwy run` / `pwy sync`)
 
-Deletes the running Pathways JobSet.
+`pwy` provides utility commands to synchronize local code and run tasks directly inside the JAX client container of an active Pathways cluster.
+
+#### Execute Code (`pwy run`)
+Syncs local files to the client container and executes commands:
+
+```bash
+pwy run python3 my_script.py
+```
+
+You can also specify custom source/destination paths:
+```bash
+pwy run --source ./my_project --dest /app python3 train.py
+```
+
+#### Synchronize Directory (`pwy sync`)
+Syncs local files to the remote client container without executing a command:
+
+```bash
+pwy sync --source ./my_project --dest /app
+```
+
+---
+
+### 3. Teardown a Cluster (`pwy down`)
+
+Deletes the running Pathways JobSet resource and cleans up associated pods.
 
 ```bash
 pwy down --name pathways-interactive --namespace default
@@ -68,7 +96,9 @@ pwy down --name pathways-interactive --namespace default
 
 ---
 
-### 3. Verification Example
+## Workload Examples
+
+### 1. Verification Example
 
 Once the interactive cluster is running, you can verify execution by `exec`ing into the client container:
 
@@ -91,7 +121,7 @@ Once the interactive cluster is running, you can verify execution by `exec`ing i
 
 ---
 
-### 4. Running Jupyter Notebook (Interactive Development)
+### 2. Running Jupyter Notebook (Interactive Development)
 
 You can spin up a Jupyter Notebook directly inside the JAX client container using the `--command` override:
 
@@ -121,10 +151,9 @@ You can spin up a Jupyter Notebook directly inside the JAX client container usin
    print(jax.devices())
    ```
 
-
 ---
 
-### 5. Running vLLM (Multi-Host TPU Serving) via Pathways
+### 3. Running vLLM (Multi-Host TPU Serving) via Pathways
 
 You can deploy and run `vllm-tpu` in multi-host mode using the Pathways backend in a single step by passing the startup command via `--command`. The JAX client container executes the server process, communicating with the worker TPUs over the Pathways proxy.
 
@@ -162,10 +191,9 @@ You can deploy and run `vllm-tpu` in multi-host mode using the Pathways backend 
        }'
    ```
 
-
 ---
 
-### 6. Running sglang-jax (Multi-Host TPU Serving) via Pathways
+### 4. Running sglang-jax (Multi-Host TPU Serving) via Pathways
 
 You can deploy and run `sglang-jax` in multi-host mode using the Pathways backend by syncing the cloned repository to the client container and starting the server process.
 
@@ -216,6 +244,7 @@ You can deploy and run `sglang-jax` in multi-host mode using the Pathways backen
      "max_tokens": 16
    }' -H "Content-Type: application/json" http://127.0.0.1:30000/v1/chat/completions
    ```
+
 
 ---
 
